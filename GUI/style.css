@@ -1,0 +1,278 @@
+/* ===== GLOBAL ===== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0f1117;
+    color: #f1f5f9;
+    font-family: "Segoe UI", sans-serif;
+    padding: 40px;
+    min-height: 100vh;
+}
+
+/* ===== TITLES ===== */
+
+h2 {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+h3 {
+    font-weight: 400;
+}
+h3, .note {
+    color: #94a3b8;
+}
+
+.page-subtitle {
+    margin-bottom: 30px;
+}
+
+h2, .row-title-text {
+    font-weight: 700;
+    background: linear-gradient(90deg, #1db954, #4ade80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+h4 {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.row-title,
+.row-class-title {
+    margin-bottom: 10px;
+}
+.row-class-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* ===== LAYOUT ===== */
+
+.column {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+.column-spaced {
+    flex-wrap: nowrap;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.row,
+.row-section {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+.row-section {
+    min-width: 300px;
+    background: #171b24;
+    border: 1px solid #2a3140;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.row-data {
+    width: 100%;
+}
+.row-device {
+    min-width: 250px;
+}
+
+.device-list {
+    margin-bottom: 25px;
+}
+
+/* ===== INPUT BLOCKS ===== */
+
+.websocket-IP,
+.websocket-port {
+    min-width: 220px;
+}
+
+.websocket-IP-text,
+.websocket-port-text,
+.bar-title {
+    font-size: 14px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+
+/* ===== INPUTS ===== */
+
+input {
+    width: 100%;
+    padding: 12px 14px;
+
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 12px;
+
+    color: white;
+    font-size: 15px;
+
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: #1db954;
+    box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.2);
+}
+
+/* ===== BUTTONS ===== */
+
+button {
+    background: linear-gradient(135deg, #1db954, #22c55e);
+    border: none;
+    border-radius: 14px;
+
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+
+    padding: 14px 20px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease,
+        box-shadow 0.2s ease;
+
+    box-shadow: 0 6px 18px rgba(29, 185, 84, 0.25);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: grayscale(0.4);
+}
+
+.button-column {
+    justify-content: space-between;
+}
+
+/* ===== CONNECTION STATUS ===== */
+
+.WS-connection-status,
+.API-connection-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px 12px;
+}
+
+.row-class-title,
+#WS-connection-status-text,
+#API-connection-status-text {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#WS-connection-status-circle,
+#API-connection-status-circle {
+    width: 18px;
+    height: 18px;
+
+    border-radius: 50%;
+
+    background: #ef4444;
+
+    box-shadow:
+        0 0 12px rgba(239, 68, 68, 0.8),
+        0 0 24px rgba(239, 68, 68, 0.4);
+
+    transition: all 0.25s ease;
+}
+
+.connected {
+    background: #22c55e !important;
+
+    box-shadow:
+        0 0 12px rgba(34, 197, 94, 0.9),
+        0 0 24px rgba(34, 197, 94, 0.5) !important;
+}
+
+#user-pfp {
+    margin-left: auto;
+}
+
+/* ===== LOG WINDOW ===== */
+
+#log {
+    margin-top: 25px;
+
+    background: #0b1220;
+    border: 1px solid #243041;
+
+    border-radius: 18px;
+
+    padding: 20px;
+
+    min-height: 250px;
+    max-height: 400px;
+
+    overflow-y: auto;
+
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.5;
+
+    box-shadow:
+        inset 0 0 20px rgba(0,0,0,0.25);
+}
+
+/* ===== DEVICES ===== */
+
+.device-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+
+/* ===== SCROLLBAR ===== */
+
+#log::-webkit-scrollbar {
+    width: 10px;
+}
+
+#log::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 999px;
+}
+
+#log::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}

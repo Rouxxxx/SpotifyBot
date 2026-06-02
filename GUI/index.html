@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>SpotifyBot Dashboard</title>
+</head>
+<body>
+    <h2>StreamerBot Spotify Extension</h2>
+    <h3 class="page-subtitle">Configuration dashboard for SpotifyBot</h3>
+    
+
+    <div class="column">
+        <div class="row-section">
+            <div class="row-title">
+                <h3 class="row-title-text">Websocket</h3>
+                <h4>Connect to StreamerBot's Websocket</h4>
+            </div>
+            <div class="WS-connection-status">
+                <p id="WS-connection-status-text">Not connected</p>
+                <div id="WS-connection-status-circle"></div>
+            </div>
+            <div class="row-data">
+                <div class="column">
+                    <div class="websocket-IP">
+                        <p class="websocket-IP-text">WebSocket IP</p>
+                        <input id="websocket-IP-input" value="127.0.0.1"></input>
+                    </div>
+                    <div class="websocket-port">
+                        <p class="websocket-port-text">WebSocket Port</p>
+                        <input id="websocket-port-input" value="8080"></input>
+                    </div>
+                </div>
+            </div>
+            <div class="column button-column">
+                <button id="WS-button-connect" onclick="connectSocket()">Connect</button>
+                <button disabled id="WS-button-disconnect" onclick="disconnectSocket()">Disconnect</button>
+            </div>
+        </div>
+
+        <div class="row-section">
+            <div class="row-title">
+                <h3 class="row-title-text">Spotify API</h3>
+                <h4>Connect to Spotify's API</h4>
+            </div>
+            <div class="API-connection-status">
+                <p id="API-connection-status-text">Not connected</p>
+                <div id="API-connection-status-circle"></div>
+            </div>
+            <div class="row-data">
+                <div class="column">
+                    <div class="credentials-clientID">
+                        <p class="bar-title">Client ID</p>
+                        <input id="credentials-clientID-input" type="password"></input>
+                    </div>
+                    <div class="credentials-clientSecret">
+                        <p class="bar-title">Client secret</p>
+                        <input id="credentials-clientSecret-input" type="password"></input>
+                    </div>
+                </div>
+            </div>
+            <div class="row-data">
+                <div class="column column-spaced">
+                    <button disabled id="credentials-button-connect" onclick="connectSpotify()">Connect</button>
+                    <div class="column">
+                        <p id="user-name">Username:</p>
+                        <img id="user-pfp" src="" alt="Image" width="50" style="display:none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row-section">
+            <div class="row-title">
+                <h3 class="row-title-text">Spotify Device</h3>
+                <h4>Set the device SpotifyBot should play songs on</h4>
+            </div>
+            <div class="column column-spaced">
+                <div class="row row-device">
+                    <p class="device-title">Saved device :</p>
+                    <p id="saved-device-text">None</p>
+                </div>
+                <div class="row row-device">
+                    <p class="device-title">Active device :</p>
+                    <p id="active-device-text">None</p>
+                </div>
+            </div>
+            <div class="device-list">
+                <p class="row-class-title" id="device-list-text">Devices list</p>
+                <select id="devices-select"></select>
+            </div>
+            <p class="note">Note: For a device to appear in the list, you might have to play a song on it</p>
+            <div class="column button-column">
+                <button disabled id="device-button-refresh" onclick="refreshDevices()">Refresh devices</button>
+                <button disabled id="device-button-update" onclick="updateDevice()">Set device</button>
+            </div>
+        </div>
+    </div>
+
+    <pre id="log"></pre>
+
+    
+    <!-- Load utils -->
+    <script src="js/events.js"></script>
+
+    <!-- Load app -->
+    <script src="js/app.js"></script>
+    
+    <!-- Load websocket -->
+    <script src="js/websocket.js"></script>
+</body>
+</html>
