@@ -107,9 +107,11 @@ function handleUserInfo(actionName, data) {
 
     if (pfp !== undefined) {
         const img = document.getElementById("user-pfp");
+        const username = document.getElementById("user-name");
 
         img.src = pfp;
         img.style.display = "block";
+        username.style.display = "block";
     }
 }
 

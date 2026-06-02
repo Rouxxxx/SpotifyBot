@@ -12,7 +12,36 @@ body {
     font-family: "Segoe UI", sans-serif;
     padding: 40px;
     min-height: 100vh;
+    width: 50%;
+    margin: 0 auto;
 }
+
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+
+    margin: auto;
+    width: 80%;
+
+    background: #171b24;
+    border: 1px solid #2a3140;
+    border-radius: 18px;
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+
+}
+
+hr {
+    background-color: #ccc;
+    border-top: 1px solid #ccc;
+    margin: 20px auto;
+    width: 80%;
+    height: 1px;
+}
+
 
 /* ===== TITLES ===== */
 
@@ -60,49 +89,47 @@ h4 {
     flex-direction: row;
     gap: 20px;
     align-items: flex-start;
-    flex-wrap: wrap;
 }
 .column-spaced {
-    flex-wrap: nowrap;
     width: 100%;
     justify-content: space-between;
 }
-
+.column-centered {
+    width: 100%;
+    justify-content: center;
+}
+.column-shrinked {
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
 .row,
 .row-section {
     position: relative;
     display: flex;
     flex-direction: column;
     gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 25px;
-    flex-wrap: wrap;
 }
+.row {
+    align-items: center;
+}
+
 .row-section {
-    min-width: 300px;
-    background: #171b24;
-    border: 1px solid #2a3140;
-    border-radius: 18px;
-    padding: 20px;
-    box-shadow:
-        0 10px 25px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255,255,255,0.03);
-}
-.row-data {
     width: 100%;
+    align-items: flex-start;
+    min-width: 600px;
+    padding: 20px;
 }
 .row-device {
     min-width: 250px;
-}
-
-.device-list {
-    margin-bottom: 25px;
+    gap: 5px;
 }
 
 /* ===== INPUT BLOCKS ===== */
 
 .websocket-IP,
 .websocket-port {
+    flex: 1;
     min-width: 220px;
 }
 
@@ -112,6 +139,11 @@ h4 {
     font-size: 14px;
     color: #94a3b8;
     margin-bottom: 8px;
+}
+
+.credentials-clientID,
+.credentials-clientSecret {
+    flex: 1;
 }
 
 /* ===== INPUTS ===== */
@@ -259,6 +291,23 @@ button:disabled {
 .device-title {
     font-size: 16px;
     font-weight: 600;
+}
+
+#device-list-text {
+    align-self: flex-start;
+    margin-bottom: 0;
+}
+#devices-select {
+    width: 100%;
+}
+
+#device-list-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+#column-devices {
+    margin-bottom: 20px;
 }
 
 
