@@ -115,6 +115,14 @@ function handleUserInfo(actionName, data) {
     }
 }
 
+function handleSetOptions(actionName, data) {
+    const status = data.status;
+    if (status != 200) {
+        return;
+    }
+    console.log("Options saved");
+}
+
 // Handle response from StreamerBot for all supported actions
 function handleEvent(actionName, data) {
     switch (actionName) {
@@ -135,6 +143,9 @@ function handleEvent(actionName, data) {
             break;
         case "SPOTIFYBOT - GUI - Get user info":
             handleUserInfo(actionName, data);
+            break;
+        case "SPOTIFYBOT - GUI - Set options":
+            handleSetOptions(actionName, data);
             break;
     }
 }

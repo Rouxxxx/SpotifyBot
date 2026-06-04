@@ -4,6 +4,7 @@ let actions = new Map();
 let pendingEvents = new Map();
 let isConnected = false;
 let isSpotifyConnected = false;
+let showOptions = false;
 
 function log(msg) {
     document.getElementById("log").textContent += msg + "\n";
@@ -45,4 +46,75 @@ function updateDevice() {
     const value = select.value;
 
     sendAction("SPOTIFYBOT - GUI - Set saved device", {data: {device_id: value}})
+}
+
+function enableOptions() {
+    showOptions = !showOptions;
+    const mainPageDiv = document.getElementById("page-main");
+    const optionsPageDiv = document.getElementById("page-options");
+
+    mainPageDiv.style.display = (showOptions) ? "none" : "block";
+    optionsPageDiv.style.display = (showOptions) ? "block" : "none";
+}
+
+
+function handleCheckboxULChange(id) {
+    const item = document.getElementById(id);
+    item.classList.toggle("disabled");
+}
+
+function handleCheckboxInputChange(id) {
+    const item = document.getElementById(id);
+    item.disabled = !item.disabled;
+}
+
+function setSliderValue(value, id) {
+    const item = document.getElementById(id);
+    item.textContent = value;
+}
+
+function sendOptions() {
+    const data = {}
+
+    // Song request restriction
+    // If checked, save the new list
+    const songrequest_restriction = document.getElementById("checkbox-songrequest-restriction").checked;
+    data["songrequest_restriction"] = songrequest_restriction;
+    if (songrequest_restriction) {
+        data["songrequest_restriction_list"] = {
+            follower: document.getElementById("checkbox-restriction-follower").checked,
+            subscriber: document.getElementById("checkbox-restriction-subscriber").checked,
+            vip: document.getElementById("checkbox-restriction-vip").checked,
+        }
+    }
+
+    // Max requests
+    // If enabled, save the new number
+    const max_requests = document.getElementById("checkbox-max-requests").checked;
+    data["max_requests"] = max_requests;
+    if (max_requests) {
+        data["max_requests_number"] = document.getElementById("input-max-requests").value;
+    }
+
+    // Skip songs
+    // If enabled, save the new number
+    const skip_songs = document.getElementById("checkbox-skip-songs").checked;
+    data["skip_songs"] = skip_songs;
+    if (skip_songs) {
+        data["skip_songs_number"] = document.getElementById("input-skip-songs").value;
+    }
+
+    // Song length
+    // If enabled, save the new number
+    const song_length = document.getElementById("checkbox-song-length").checked;
+    data["song_length"] = song_length;
+    if (song_length) {
+        data["song_length_number"] = document.getElementById("input-song-length").value;
+    }
+
+    // Spotify links
+    const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink").checked;
+    data["songrequest_spotifylink"] = songrequest_spotifylink;
+
+    sendAction("SPOTIFYBOT - GUI - Set options", {data: data});
 }

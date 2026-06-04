@@ -28,7 +28,11 @@ function connectSocket() {
         SetCSSConnected(true, "WS-connection-status-circle", "WS-connection-status-text");
         SetButtonEnabled(false, "WS-button-connect");
         SetButtonEnabled(true, "WS-button-disconnect");
+
         SetButtonEnabled(true, "credentials-button-connect");
+
+        SetButtonEnabled(true, "button-options");
+        SetButtonEnabled(true, "button-options-apply");
 
         // Subscribe to all custom events
         subscribeEvents();
@@ -97,9 +101,13 @@ function connectSocket() {
 
         SetButtonEnabled(true, "WS-button-connect");
         SetButtonEnabled(false, "WS-button-disconnect");
+
         SetButtonEnabled(false, "credentials-button-connect");
         SetButtonEnabled(false, "device-button-update");
         SetButtonEnabled(false, "device-button-refresh");
+
+        SetButtonEnabled(false, "button-options");
+        SetButtonEnabled(false, "button-options-apply");
 
         isSpotifyConnected = false;
         isConnected = false;
