@@ -176,7 +176,6 @@ public class CPHInline
 
         // If user already has a saved device in StreamerBot, get it
         string savedDevice = CPH.GetGlobalVar<string>("SPOTIFYBOT_savedDevice", true);
-        CPH.SendMessage("test " +savedDevice);
         if (!string.IsNullOrEmpty(savedDevice))
         {
             data["saved_device"] = savedDevice;
