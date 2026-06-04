@@ -77,7 +77,7 @@ function connectSocket() {
                 data.actions.forEach(item => actions.set(item.name, item));
 
                 // Ask StreamerBot if user is logged in
-                sendAction("SPOTIFYBOT - Check connection status", undefined)
+                sendAction("SPOTIFYBOT - GUI - Check connection status", undefined)
                 return;
             }
         }

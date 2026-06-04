@@ -37,12 +37,12 @@ function connectSpotify() {
 
 // Refresh the list of user's devices
 function refreshDevices() {
-    sendAction("SPOTIFYBOT - Get available devices");
+    sendAction("SPOTIFYBOT - GUI - Get available devices");
 }
 // Update user's saved device to play songs on
 function updateDevice() {
     const select = document.getElementById("devices-select");
     const value = select.value;
 
-    sendAction("SPOTIFYBOT - Set saved device", {data: {device_id: value}})
+    sendAction("SPOTIFYBOT - GUI - Set saved device", {data: {device_id: value}})
 }

@@ -36,14 +36,14 @@ function handleConnected(actionName, data) {
 
     // If user is connected to spotify, get the devices and user info
     isSpotifyConnected = true;
-    sendAction("SPOTIFYBOT - Get available devices");
+    sendAction("SPOTIFYBOT - GUI - Get available devices");
     SetButtonEnabled(true, "device-button-refresh");
 
     const clientID = data.clientID;
     const clientSecret = data.clientSecret;
     SetConnected(clientID, clientSecret);
 
-    sendAction("SPOTIFYBOT - Get user info")
+    sendAction("SPOTIFYBOT - GUI - Get user info")
 }
 
 // Set the UI for saved device and available devices
@@ -121,19 +121,19 @@ function handleEvent(actionName, data) {
         case "TEST":
             log("THIS IS A TEST WITH ID " + data.requestID)
             break;
-        case "SPOTIFYBOT - Check connection status":
+        case "SPOTIFYBOT - GUI - Check connection status":
             handleConnected(actionName, data);
             break;
         case "SPOTIFYBOT - Login":
             handleConnected(actionName, data);
             break;
-        case "SPOTIFYBOT - Get available devices":
+        case "SPOTIFYBOT - GUI - Get available devices":
             handleDevices(actionName, data);
             break;
-        case "SPOTIFYBOT - Set saved device":
+        case "SPOTIFYBOT - GUI - Set saved device":
             refreshDevices();
             break;
-        case "SPOTIFYBOT - Get user info":
+        case "SPOTIFYBOT - GUI - Get user info":
             handleUserInfo(actionName, data);
             break;
     }
