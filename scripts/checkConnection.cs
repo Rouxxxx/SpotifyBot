@@ -34,6 +34,43 @@ public class CPHInline
     }
 	#endregion
 
+    #region execute
+	public bool Execute()
+	{
+        string URI = "https://api.spotify.com/v1/me/";
+        var (accessToken, expiresAt, message) = InitAPI();
+
+        // If error with access token, return error 500 (Internal Server error)
+        if (string.IsNullOrEmpty(accessToken))
+        {
+            SendResponse(args, 403, message);
+            return true;
+        }
+
+        int status = 0;
+        string json = string.Empty;
+
+        // Fetch connection status from API
+        Task.Run(async () =>
+        {
+            try
+            {
+				(status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
+            }
+            catch (Exception ex)
+            {
+                CPH.LogDebug($"Exception: {ex.Message}");
+                return;
+            }
+        }).GetAwaiter().GetResult();
+
+        // Send the response via websocket
+        SendResponse(args, status);
+
+		return true;
+	}
+    #endregion
+
 	#region APIutils
     private (string accessToken, DateTime expiresAt, string message) InitAPI()
     {
@@ -102,41 +139,6 @@ public class CPHInline
         return (statusCode, json);
     }
     #endregion
-
-	public bool Execute()
-	{
-        string URI = "https://api.spotify.com/v1/me/";
-        var (accessToken, expiresAt, message) = InitAPI();
-
-        // If error with access token, return error 500 (Internal Server error)
-        if (string.IsNullOrEmpty(accessToken))
-        {
-            SendResponse(args, 403, message);
-            return true;
-        }
-
-        int status = 0;
-        string json = string.Empty;
-
-        // Fetch connection status from API
-        Task.Run(async () =>
-        {
-            try
-            {
-				(status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
-            }
-            catch (Exception ex)
-            {
-                CPH.LogDebug($"Exception: {ex.Message}");
-                return;
-            }
-        }).GetAwaiter().GetResult();
-
-        // Send the response via websocket
-        SendResponse(args, status);
-
-		return true;
-	}
 
 	#region command
     // Send the response via websocket
