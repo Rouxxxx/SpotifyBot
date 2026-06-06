@@ -84,7 +84,7 @@ public class CPHInline
                 // If URL, just add it to the queue
                 if (Regex.IsMatch(input, @"^https?:\/\/[^\s\/$.?#].[^\s]*$", RegexOptions.IgnoreCase))
                 {
-                    (songURI, songInfo, songDuration) = await AddLinkToQueue(accessToken, input);
+                    (songURI, songInfo, songDuration) = await FetchSpotifyLinkInfo(accessToken, input);
                 }
                 else
                 {
@@ -256,7 +256,7 @@ public class CPHInline
     }
 
     // Add a track to the queue from a link
-    private async Task<(string songURI, string songInfo, int songDuration)> AddLinkToQueue(string accessToken, string URL)
+    private async Task<(string songURI, string songInfo, int songDuration)> FetchSpotifyLinkInfo(string accessToken, string URL)
     {
         // Get track URI
         string trackID = GetSpotifyTrackID(URL);
@@ -271,7 +271,7 @@ public class CPHInline
         var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
         JObject root = JObject.Parse(json);
 
-        return getTrackInfo(root);
+        return GetTrackInfo(root);
     }
     
     // Add a selected track to the queue
@@ -345,12 +345,12 @@ public class CPHInline
         JObject root = JObject.Parse(json);
         JToken? item = root?["tracks"]?["items"]?[0];
 
-        return getTrackInfo(item);
+        return GetTrackInfo(item);
     }
     #endregion
 
     #region command
-    private (string songURI, string songInfo, int duration) getTrackInfo(JToken item)
+    private (string songURI, string songInfo, int duration) GetTrackInfo(JToken item)
     {
         if (item == null)
         {
