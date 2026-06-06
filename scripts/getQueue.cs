@@ -49,27 +49,6 @@ public class CPHInline
     }
     #endregion
 
-	#region init
-	// Init variables before run
-	public void Init()
-    {
-        if (_http == null)
-        {
-            _http = new HttpClient
-            {
-                Timeout = TimeSpan.FromSeconds(30)
-            };
-        }
-        _http.DefaultRequestHeaders.Clear();
-    }
-
-	// Dispose variables after run
-    public void Dispose()
-    {
-        _http?.Dispose();
-    }
-	#endregion
-
     #region command
     // Builds message containing queue info
     public string buildQueueMessage(List<QueueItem> queue, string currentSong)
