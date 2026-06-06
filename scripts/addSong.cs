@@ -66,9 +66,16 @@ public class CPHInline
         {
             return false;
         }
+
+        // Init variables
         string songURI = string.Empty;
         string songInfo = string.Empty;
+        int songDuration = 0;
         bool error = false;
+
+        bool songLength = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_length", false);
+        // Convert s to ms
+        int songLengthNumber = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_length_number", false);
 
         Task.Run(async () =>
         {
@@ -77,18 +84,26 @@ public class CPHInline
                 // If URL, just add it to the queue
                 if (Regex.IsMatch(input, @"^https?:\/\/[^\s\/$.?#].[^\s]*$", RegexOptions.IgnoreCase))
                 {
-                    (songURI, songInfo) = await AddLinkToQueue(accessToken, input);
-                    return;
+                    (songURI, songInfo, songDuration) = await AddLinkToQueue(accessToken, input);
                 }
-
-                // Search for the track and add it to the queue
-				(songURI, songInfo) = await SearchTrack(accessToken, input);
+                else
+                {
+                    // Search for the track and add it to the queue
+				    (songURI, songInfo, songDuration) = await SearchTrack(accessToken, input);
+                }
 
                 // Error handling
                 if (string.IsNullOrEmpty(songURI) || string.IsNullOrEmpty(songInfo))
                 {
                     return;
                 }
+                // If song is too long, abort
+                if (songLength && (songDuration > songLengthNumber))
+                {
+                    return;
+                }
+
+
                 int trackReturn = await AddTrackToQueue(accessToken, songURI);
                 if (trackReturn != 200)
                 {
@@ -102,7 +117,7 @@ public class CPHInline
                 CPH.LogDebug($"Exception: {ex.Message}");
                 return;
             }
-        }).GetAwaiter().GetResult();;
+        }).GetAwaiter().GetResult();
 
         // Error handling
         if (string.IsNullOrEmpty(songURI) || string.IsNullOrEmpty(songInfo))
@@ -113,6 +128,13 @@ public class CPHInline
         if (error)
         {
             CPH.SendMessage("There was an error trying to add song to queue");
+            return true;
+        }
+
+        // If song is too long, abort
+        if (songLength && (songDuration > songLengthNumber))
+        {
+            CPH.SendMessage($"Song [{songInfo}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
             return true;
         }
 
@@ -234,13 +256,13 @@ public class CPHInline
     }
 
     // Add a track to the queue from a link
-    private async Task<(string songURI, string songInfo)> AddLinkToQueue(string accessToken, string URL)
+    private async Task<(string songURI, string songInfo, int songDuration)> AddLinkToQueue(string accessToken, string URL)
     {
         // Get track URI
         string trackID = GetSpotifyTrackID(URL);
         if (string.IsNullOrEmpty(trackID))
         {
-            return (string.Empty, string.Empty);
+            return (string.Empty, string.Empty, 0);
         }
 
         string URI = $"https://api.spotify.com/v1/tracks/{trackID}";
@@ -249,15 +271,7 @@ public class CPHInline
         var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
         JObject root = JObject.Parse(json);
 
-        // Extract song URI
-        string? songURI = root["uri"]?.ToString();
-        // Extract song name
-        string? songName = root["name"]?.ToString();
-        // Extract artist name
-        string? artistName = root["artists"]?[0]?["name"]?.ToString();
-
-        await AddTrackToQueue(accessToken, songURI);
-        return (songURI, $"{songName} | {artistName}");
+        return getTrackInfo(root);
     }
     
     // Add a selected track to the queue
@@ -316,7 +330,7 @@ public class CPHInline
 
     #region searchSong
     // Search a track and return its uri
-    private async Task<(string songURI, string songInfo)> SearchTrack(string accessToken, string query)
+    private async Task<(string songURI, string songInfo, int songDuration)> SearchTrack(string accessToken, string query)
     {
         string URI = $"https://api.spotify.com/v1/search?limit=10&market=US&type=track&q=track:{query}";
         var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
@@ -324,15 +338,23 @@ public class CPHInline
         // Error handling
         if (string.IsNullOrWhiteSpace(json))
         {
-            return (string.Empty, string.Empty);
+            return (string.Empty, string.Empty, 0);
         }
 
         // Parse the JSON response
         JObject root = JObject.Parse(json);
         JToken? item = root?["tracks"]?["items"]?[0];
+
+        return getTrackInfo(item);
+    }
+    #endregion
+
+    #region command
+    private (string songURI, string songInfo, int duration) getTrackInfo(JToken item)
+    {
         if (item == null)
         {
-            return (string.Empty, string.Empty);
+            return (string.Empty, string.Empty, 0);
         }
 
         // Extract song URI
@@ -343,8 +365,9 @@ public class CPHInline
         string? artistName = item["artists"]?[0]?["name"]?.ToString();
 
         // Order and return song info
+        int duration = (int)item["duration_ms"] / 1000;
         string songInfo = $"{songName} | {artistName}";
-        return (songURI, songInfo);
+        return (songURI, songInfo, duration);
     }
     #endregion
 }
