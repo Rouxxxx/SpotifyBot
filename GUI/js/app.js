@@ -116,5 +116,5 @@ function sendOptions() {
     const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink").checked;
     data["SR_spotifylink"] = songrequest_spotifylink;
 
-    sendAction("SPOTIFYBOT - GUI - Set options", {data: data});
+    sendAction("SPOTIFYBOT - GUI - Set configuration", {data: data});
 }
