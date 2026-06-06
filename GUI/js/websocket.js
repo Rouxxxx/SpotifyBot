@@ -79,6 +79,8 @@ function connectSocket() {
             // Get all actions and put them in actions table
             if (actionsRequestID !== undefined && actionsRequestID === id) {
                 data.actions.forEach(item => actions.set(item.name, item));
+                // Ask StreamerBot for current SpotifyBot configuration
+                sendAction("SPOTIFYBOT - GUI - Configuration", {data: {mode : "get"}});
 
                 // Ask StreamerBot if user is logged in
                 sendAction("SPOTIFYBOT - GUI - Check connection status", undefined)

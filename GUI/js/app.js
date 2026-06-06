@@ -73,8 +73,10 @@ function setSliderValue(value, id) {
     item.textContent = value;
 }
 
-function sendOptions() {
+function sendConfiguration() {
     const data = {}
+    // Set the configuration mode
+    data["mode"] = "set";
 
     // Song request restriction
     // If checked, save the new list
@@ -116,5 +118,5 @@ function sendOptions() {
     const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink").checked;
     data["SR_spotifylink"] = songrequest_spotifylink;
 
-    sendAction("SPOTIFYBOT - GUI - Set configuration", {data: data});
+    sendAction("SPOTIFYBOT - GUI - Configuration", {data: data});
 }

@@ -115,8 +115,100 @@ function handleUserInfo(actionName, data) {
     }
 }
 
+// Modify an element if the value exists
+function setIfDefined(value, element, accessor)
+{
+    if (value === undefined ) {
+        return;
+    }
+        
+    element[accessor] = value;
+}
+
+// Toggle element if the value exists
+function toggleIfDefined(value, element)
+{
+    if (!value) {
+        return;
+    }
+
+    const isDisabled = element.classList.contains("disabled");
+    if ((isDisabled && value) || (!isDisabled && !value))
+    {
+        element.classList.toggle("disabled");
+    }
+}
+
+// In GET mode, update UI to match current StreamerBot configuration
 function handleSetOptions(actionName, data) {
     const status = data.status;
+    const mode = data.mode;
+    if (mode == "get")
+    {
+        const dataObj = JSON.parse(data.data);
+
+        // Song request restriction
+        const songrequest_restriction_checkbox = document.getElementById("checkbox-songrequest-restriction");
+        const songrequest_restriction = document.getElementById("songrequest-restriction");
+        toggleIfDefined(dataObj["SR_restriction"], songrequest_restriction);
+        setIfDefined(dataObj["SR_restriction"], songrequest_restriction_checkbox, "checked");
+
+        // Song request restriction list
+        const songrequest_restriction_follower = document.getElementById("checkbox-restriction-follower");
+        setIfDefined(dataObj["SR_restriction_list"]["follower"], songrequest_restriction_follower, "checked");
+        const songrequest_restriction_subscriber = document.getElementById("checkbox-restriction-subscriber");
+        setIfDefined(dataObj["SR_restriction_list"]["subscriber"], songrequest_restriction_subscriber, "checked");
+        const songrequest_restriction_vip = document.getElementById("checkbox-restriction-vip");
+        setIfDefined(dataObj["SR_restriction_list"]["vip"], songrequest_restriction_vip, "checked");
+
+        // Max requests
+        const max_requests_checkbox = document.getElementById("checkbox-max-requests");
+        const max_requests = document.getElementById("input-max-requests");
+        const SR_maxuser = dataObj["SR_maxuser"];
+        setIfDefined((SR_maxuser === undefined) ? undefined : !SR_maxuser, max_requests, "disabled");
+        setIfDefined(SR_maxuser, max_requests_checkbox, "checked");
+
+        // Max requests number
+        const max_requests_number = document.getElementById("input-max-requests");
+        const max_requests_label = document.getElementById("label-max-requests");
+        const SR_maxuser_number = dataObj["SR_maxuser_number"];
+        setIfDefined(SR_maxuser_number, max_requests_number, "value");
+        setIfDefined(SR_maxuser_number, max_requests_label, "textContent");
+
+        // Skip songs
+        const skip_songs_checkbox = document.getElementById("checkbox-skip-songs");
+        const skip_songs = document.getElementById("input-skip-songs");
+        const SR_skip = dataObj["SR_skip"];
+        setIfDefined((SR_skip === undefined) ? undefined : !SR_skip, skip_songs, "disabled");
+        setIfDefined(SR_skip, skip_songs_checkbox, "checked");
+
+        // Skip songs number
+        const skip_songs_number = document.getElementById("input-skip-songs");
+        const skip_songs_label = document.getElementById("label-skip-songs");
+        const SR_skip_number = dataObj["SR_skip_number"];
+        setIfDefined(SR_skip_number, skip_songs_number, "value");
+        setIfDefined(SR_skip_number, skip_songs_label, "textContent");
+
+        // Song length
+        const song_length_checkbox = document.getElementById("checkbox-song-length");
+        const song_length = document.getElementById("input-song-length");
+        const SR_length = dataObj["SR_length"];
+        setIfDefined((SR_length === undefined) ? undefined : !SR_length, song_length, "disabled");
+        setIfDefined(SR_length, song_length_checkbox, "checked");
+
+        // Song length number
+        const song_length_number = document.getElementById("input-song-length");
+        const song_length_label = document.getElementById("label-song-length");
+        const SR_length_number = dataObj["SR_length_number"];
+        setIfDefined(SR_length_number, song_length_number, "value");
+        setIfDefined(SR_length_number, song_length_label, "textContent");
+
+        const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink");
+        const SR_spotifylink = dataObj["SR_spotifylink"];
+        setIfDefined(SR_spotifylink, songrequest_spotifylink, "checked");
+
+        return;
+    }
     if (status != 200) {
         return;
     }
@@ -144,7 +236,7 @@ function handleEvent(actionName, data) {
         case "SPOTIFYBOT - GUI - Get user info":
             handleUserInfo(actionName, data);
             break;
-        case "SPOTIFYBOT - GUI - Set options":
+        case "SPOTIFYBOT - GUI - Configuration":
             handleSetOptions(actionName, data);
             break;
     }
