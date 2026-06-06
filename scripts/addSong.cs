@@ -72,6 +72,8 @@ public class CPHInline
         string songInfo = string.Empty;
         int songDuration = 0;
         bool error = false;
+        bool isSpotifyLink = false;
+        bool spotifyLinksAllowed = false;
 
         bool songLength = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_length", false);
         // Convert s to ms
@@ -81,9 +83,16 @@ public class CPHInline
         {
             try
             {
+                isSpotifyLink = Regex.IsMatch(input, @"^https?:\/\/[^\s\/$.?#].[^\s]*$", RegexOptions.IgnoreCase);
                 // If URL, just add it to the queue
-                if (Regex.IsMatch(input, @"^https?:\/\/[^\s\/$.?#].[^\s]*$", RegexOptions.IgnoreCase))
+                if (isSpotifyLink)
                 {
+                    // If spotify links aren't allowed, abort
+                    spotifyLinksAllowed = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_spotifylink", false);
+                    if (!spotifyLinksAllowed)
+                    {
+                        return;
+                    }
                     (songURI, songInfo, songDuration) = await FetchSpotifyLinkInfo(accessToken, input);
                 }
                 else
@@ -120,6 +129,14 @@ public class CPHInline
         }).GetAwaiter().GetResult();
 
         // Error handling
+        // If links aren't allowed and link was supplied, abort
+        if (isSpotifyLink && !spotifyLinksAllowed)
+        {
+            CPH.SendMessage($"Spotify links are forbidden");
+            return true;
+        }
+
+        // Song not found
         if (string.IsNullOrEmpty(songURI) || string.IsNullOrEmpty(songInfo))
         {
             CPH.SendMessage($"No song found for {input}");
