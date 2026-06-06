@@ -49,9 +49,10 @@ public class CPHInline
         string user;
         CPH.TryGetArg("user", out user);
 
-        int max = CPH.GetGlobalVar<int>("SPOTIFYBOT_maxNumberOfUserSongs", true);
+        bool maxRequests = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_maxuser", false);
+        int max = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_maxuser_number", false);
 
-        bool checkQueue = CanUserAddTrackInQueue(max, user);
+        bool checkQueue = CanUserAddTrackInQueue(maxRequests, max, user);
         if (!checkQueue)
         {
             CPH.SendMessage($"User already added {max} songs to the queue");
@@ -268,8 +269,13 @@ public class CPHInline
     }
 
     // Check if user already sent too much songs in queue
-    private bool CanUserAddTrackInQueue(int max, string username)
+    private bool CanUserAddTrackInQueue(bool isEnabled, int max, string username)
     {
+        // If max request number isn't enabled, allow all requests
+        if (!isEnabled) 
+        {
+            return true;
+        }
         // Load variables
         string json = CPH.GetGlobalVar<string>("SPOTIFYBOT_queue", false);
         List<QueueItem> queue = string.IsNullOrEmpty(json) ? new() : JsonConvert.DeserializeObject<List<QueueItem>>(json);
