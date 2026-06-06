@@ -28,6 +28,14 @@ public class Song
     public string URI { get; set; }
 }
 
+public enum TrackError
+{
+    notFound = 1,
+    tooLong,
+    linksNotAllowed,
+    addTrackError
+}
+
 public class CPHInline
 {
 	private static HttpClient _http;
@@ -71,7 +79,7 @@ public class CPHInline
         string songURI = string.Empty;
         string songInfo = string.Empty;
         int songDuration = 0;
-        bool error = false;
+        int error = 0;
         bool isSpotifyLink = false;
         bool spotifyLinksAllowed = false;
 
@@ -87,39 +95,41 @@ public class CPHInline
                 // If URL, just add it to the queue
                 if (isSpotifyLink)
                 {
-                    // If spotify links aren't allowed, abort
+                    // Tracking spotify links not allowed
                     spotifyLinksAllowed = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_spotifylink", false);
                     if (!spotifyLinksAllowed)
                     {
+                        error = (int)TrackError.linksNotAllowed;
                         return;
                     }
                     (songURI, songInfo, songDuration) = await FetchSpotifyLinkInfo(accessToken, input);
                 }
+                // If normal request, search for the track
                 else
                 {
-                    // Search for the track and add it to the queue
 				    (songURI, songInfo, songDuration) = await SearchTrack(accessToken, input);
                 }
 
-                // Error handling
+                // Tracking song not found
                 if (string.IsNullOrEmpty(songURI) || string.IsNullOrEmpty(songInfo))
                 {
+                    error = (int)TrackError.notFound;
                     return;
                 }
-                // If song is too long, abort
+                // Tracking song too long
                 if (songLength && (songDuration > songLengthNumber))
                 {
+                    error = (int)TrackError.tooLong;
                     return;
                 }
 
-
+                // Add track to queue
                 int trackReturn = await AddTrackToQueue(accessToken, songURI);
                 if (trackReturn != 200)
                 {
-                    error = true;
+                    error = (int)TrackError.addTrackError;
+                    return;
                 }
-
-                // TODO : RETURN LOG
             }
             catch (Exception ex)
             {
@@ -129,29 +139,32 @@ public class CPHInline
         }).GetAwaiter().GetResult();
 
         // Error handling
-        // If links aren't allowed and link was supplied, abort
-        if (isSpotifyLink && !spotifyLinksAllowed)
+        if (error != 0)
         {
-            CPH.SendMessage($"Spotify links are forbidden");
-            return true;
-        }
-
-        // Song not found
-        if (string.IsNullOrEmpty(songURI) || string.IsNullOrEmpty(songInfo))
-        {
-            CPH.SendMessage($"No song found for {input}");
-            return true;
-        }
-        if (error)
-        {
-            CPH.SendMessage("There was an error trying to add song to queue");
-            return true;
-        }
-
-        // If song is too long, abort
-        if (songLength && (songDuration > songLengthNumber))
-        {
-            CPH.SendMessage($"Song [{songInfo}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
+            switch(error)
+            {
+                case (int)TrackError.notFound:
+                {
+                    CPH.SendMessage($"No song found for {input}");
+                    break;
+                }
+                case (int)TrackError.tooLong:
+                {
+                    CPH.SendMessage($"Song [{songInfo}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
+                    break;
+                }
+                case (int)TrackError.linksNotAllowed:
+                {
+                    CPH.SendMessage($"Spotify links are forbidden");
+                    break;
+                }
+                case (int)TrackError.addTrackError:
+                {
+                    CPH.SendMessage("There was an error trying to add song to queue");
+                    break;
+                }
+                default: break;
+            }
             return true;
         }
 
