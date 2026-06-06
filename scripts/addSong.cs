@@ -373,10 +373,75 @@ public class CPHInline
 
         // Parse the JSON response
         JObject root = JObject.Parse(json);
-        JToken? item = root?["tracks"]?["items"]?[0];
+        JArray tracks = (JArray)root["tracks"]?["items"];
+        JToken item = FindBestMatch(tracks, query);
 
         return GetTrackInfo(item);
     }
+    
+    // Find the best suited track for the current query
+    private JToken FindBestMatch(JArray tracks, string query)
+    {
+        if (tracks == null || tracks.Count == 0)
+        {
+            return null;
+        }
+
+        // Init variables
+        int bestScore = 0;
+        JToken bestTrack = null;
+        List<string> queryWords = new List<string>(query.ToLower().Split(' '));
+
+        // Loop through tracks and compute their score
+        foreach(JToken item in tracks)
+        {
+            int currentScore = 0;
+            string? name = item["name"]?.ToString();
+            string nameLower = name.ToLower();
+            string artists = GetArtists(item);
+
+            // If query word is in artist / song name, increase score
+            foreach (string word in queryWords)
+            {
+                if (nameLower.Contains(word) || artists.Contains(word))
+                {
+                    currentScore++;
+                }
+            }
+            if (currentScore > bestScore)
+            {
+                bestScore = currentScore;
+                bestTrack = item;
+            }
+        }
+
+        return bestTrack;
+    }
+
+    // For a track, get artists in a string separated by spaces
+    private string GetArtists(JToken item)
+    {
+        string artistsString = string.Empty;
+        JArray artists = (JArray)item["artists"];
+        if (artists == null || artists.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        // Loop through the artists array and fetch the names
+        foreach (JToken artist in artists)
+        {
+            string currentArtist = artist["name"]?.ToString();
+            if (string.IsNullOrEmpty(currentArtist))
+            {
+                continue;
+            }
+            string currentArtistLower = currentArtist.ToLower();
+            artistsString = string.IsNullOrEmpty(artistsString) ? currentArtist : $"{artistsString} {currentArtistLower}";
+        }
+        return artistsString;
+    }
+
     #endregion
 
     #region command
