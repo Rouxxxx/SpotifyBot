@@ -168,17 +168,25 @@ public class CPHInline
         var (newQueue, changed) = UpdateQueue(queue, songURI, songInfo, progressMS);
         if (changed)
         {
-            // If queue empty, reset vars
-            if (newQueue.Count == 0)
-            {
-                CPH.SetGlobalVar("SPOTIFYBOT_queue", "[]", false);
-                CPH.SetGlobalVar("SPOTIFYBOT_currentSong", songURI, false);
-                return;
-            }
-            string queueJSON = JsonConvert.SerializeObject(newQueue);
-            CPH.SetGlobalVar("SPOTIFYBOT_queue", queueJSON, false);
-            CPH.SetGlobalVar("SPOTIFYBOT_currentSong", songURI, false);
+            ResetQueueVariables(newQueue, songURI, songInfo);
         }
+    }
+
+    private void ResetQueueVariables(List<QueueItem> queue, string songURI, string songInfo)
+    {
+        // If queue empty, reset vars
+        if (queue.Count == 0)
+        {
+            CPH.SetGlobalVar("SPOTIFYBOT_queue", "[]", false);
+            CPH.SetGlobalVar("SPOTIFYBOT_currentSong", songURI, false);
+            return;
+        }
+        string queueJSON = JsonConvert.SerializeObject(queue);
+        CPH.SetGlobalVar("SPOTIFYBOT_queue", queueJSON, false);
+        CPH.SetGlobalVar("SPOTIFYBOT_currentSong", songURI, false);
+
+        //TODO : change everytime currentSong changes instead
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_usersSkipping", string.Empty, false);
     }
 
     // Update queue based on URI of current song playing
