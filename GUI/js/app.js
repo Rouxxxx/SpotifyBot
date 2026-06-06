@@ -79,9 +79,9 @@ function sendOptions() {
     // Song request restriction
     // If checked, save the new list
     const songrequest_restriction = document.getElementById("checkbox-songrequest-restriction").checked;
-    data["songrequest_restriction"] = songrequest_restriction;
+    data["SR_restriction"] = songrequest_restriction;
     if (songrequest_restriction) {
-        data["songrequest_restriction_list"] = {
+        data["SR_restriction_list"] = {
             follower: document.getElementById("checkbox-restriction-follower").checked,
             subscriber: document.getElementById("checkbox-restriction-subscriber").checked,
             vip: document.getElementById("checkbox-restriction-vip").checked,
@@ -91,30 +91,30 @@ function sendOptions() {
     // Max requests
     // If enabled, save the new number
     const max_requests = document.getElementById("checkbox-max-requests").checked;
-    data["max_requests"] = max_requests;
+    data["SR_maxuser"] = max_requests;
     if (max_requests) {
-        data["max_requests_number"] = document.getElementById("input-max-requests").value;
+        data["SR_maxuser_number"] = document.getElementById("input-max-requests").value;
     }
 
     // Skip songs
     // If enabled, save the new number
     const skip_songs = document.getElementById("checkbox-skip-songs").checked;
-    data["skip_songs"] = skip_songs;
+    data["SR_skip"] = skip_songs;
     if (skip_songs) {
-        data["skip_songs_number"] = document.getElementById("input-skip-songs").value;
+        data["SR_skip_number"] = document.getElementById("input-skip-songs").value;
     }
 
     // Song length
     // If enabled, save the new number
     const song_length = document.getElementById("checkbox-song-length").checked;
-    data["song_length"] = song_length;
+    data["SR_length"] = song_length;
     if (song_length) {
-        data["song_length_number"] = document.getElementById("input-song-length").value;
+        data["SR_length_number"] = document.getElementById("input-song-length").value;
     }
 
     // Spotify links
     const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink").checked;
-    data["songrequest_spotifylink"] = songrequest_spotifylink;
+    data["SR_spotifylink"] = songrequest_spotifylink;
 
     sendAction("SPOTIFYBOT - GUI - Set options", {data: data});
 }
