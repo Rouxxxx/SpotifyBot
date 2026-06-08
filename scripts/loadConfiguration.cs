@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+
 public class CPHInline
 {
     #region execute
@@ -19,7 +20,9 @@ public class CPHInline
         {
             return true;
         }
-        LoadOptions(json);
+        JObject configuration = string.IsNullOrEmpty(json) ? new() : JObject.Parse(json);
+        LoadOptions(configuration);
+        ToggleQueue(configuration);
 
 		return true;
 	}
@@ -27,15 +30,13 @@ public class CPHInline
 
 	#region command
     // Get valuable elements sent and save them to the configuration
-    private void LoadOptions(string json)
+    private void LoadOptions(JObject configuration)
     {
-        JObject configurationRoot = string.IsNullOrEmpty(json) ? new() : JObject.Parse(json);
-
         // Song role restrictions
-        bool SRRestriction = configurationRoot["SR_restriction"]?.ToObject<bool>() ?? false;
+        bool SRRestriction = configuration["SR_restriction"]?.ToObject<bool>() ?? false;
         CPH.SetGlobalVar("SPOTIFYBOT_SR_restriction", SRRestriction, false);
         if (SRRestriction) {
-            JObject SRRestrictionList = configurationRoot["SR_restriction_list"] as JObject;
+            JObject SRRestrictionList = configuration["SR_restriction_list"] as JObject;
             bool SRRestrictionFol = SRRestrictionList["follower"]?.ToObject<bool>() ?? false;
             bool SRRestrictionSub = SRRestrictionList["subscriber"]?.ToObject<bool>() ?? false;
             bool SRRestrictionVIP = SRRestrictionList["vip"]?.ToObject<bool>() ?? false;
@@ -46,34 +47,53 @@ public class CPHInline
         }
 
         // Max requests
-        bool maxRequests = configurationRoot["SR_maxuser"]?.ToObject<bool>() ?? false;
+        bool maxRequests = configuration["SR_maxuser"]?.ToObject<bool>() ?? false;
         CPH.SetGlobalVar("SPOTIFYBOT_SR_maxuser", maxRequests, false);
         if (maxRequests) {
-            int maxRequestsNumber = configurationRoot["SR_maxuser_number"]?.ToObject<int>() ?? 0;
+            int maxRequestsNumber = configuration["SR_maxuser_number"]?.ToObject<int>() ?? 0;
             CPH.SetGlobalVar("SPOTIFYBOT_SR_maxuser_number", maxRequestsNumber, false);
         }
 
         // Skip songs
-        bool skipSongs = configurationRoot["SR_skip"]?.ToObject<bool>() ?? false;
+        bool skipSongs = configuration["SR_skip"]?.ToObject<bool>() ?? false;
         CPH.SetGlobalVar("SPOTIFYBOT_SR_skip", skipSongs, false);
         if (skipSongs) {
-            int skipSongsNumber = configurationRoot["SR_skip_number"]?.ToObject<int>() ?? 0;
+            int skipSongsNumber = configuration["SR_skip_number"]?.ToObject<int>() ?? 0;
             CPH.SetGlobalVar("SPOTIFYBOT_SR_skip_number", skipSongsNumber, false);
         }
 
         // Song length
-        bool songLength = configurationRoot["SR_length"]?.ToObject<bool>() ?? false;
-        CPH.SetGlobalVar("SPOTIFYBOT_SR_length", skipSongs, false);
+        bool songLength = configuration["SR_length"]?.ToObject<bool>() ?? false;
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_length", songLength, false);
         if (songLength) {
-            int songLengthNumber = configurationRoot["SR_length_number"]?.ToObject<int>() ?? 0;
+            int songLengthNumber = configuration["SR_length_number"]?.ToObject<int>() ?? 0;
             CPH.SetGlobalVar("SPOTIFYBOT_SR_length_number", songLengthNumber, false);
         }
 
         // Spotify links
-        bool spotifyLinks = configurationRoot["SR_spotifylink"]?.ToObject<bool>() ?? false;
+        bool spotifyLinks = configuration["SR_spotifylink"]?.ToObject<bool>() ?? false;
         CPH.SetGlobalVar("SPOTIFYBOT_SR_spotifylink", spotifyLinks, false);
     }
 
+    // Enable or disable the queue system
+    private void ToggleQueue(JObject configuration)
+    {
+        bool SRqueue = configuration["SR_queue"]?.ToObject<bool>() ?? true;
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_queue", SRqueue, false);
+        if (SRqueue)
+        {
+            CPH.EnableTimer("SPOTIFYBOT - Update Queue");
+            return;
+        }
+
+        // If queue disabled, also disable the max amount of songs an user can queue + the skip command
+        CPH.DisableTimer("SPOTIFYBOT - Update Queue");
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_maxuser", false, false);
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_skip", false, false);
+    }
+    #endregion
+
+    #region websocket
     // Send the response via websocket
     private void SendResponse(Dictionary<string, object> args, int status, string message = "")
     {
