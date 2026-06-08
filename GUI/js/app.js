@@ -90,6 +90,18 @@ function sendConfiguration() {
         }
     }
 
+    // Song length
+    // If enabled, save the new number
+    const song_length = document.getElementById("checkbox-song-length").checked;
+    data["SR_length"] = song_length;
+    if (song_length) {
+        data["SR_length_number"] = document.getElementById("input-song-length").value;
+    }
+
+    // Spotify links
+    const songrequest_queue = document.getElementById("checkbox-songrequest-queue").checked;
+    data["SR_queue"] = songrequest_queue;
+
     // Max requests
     // If enabled, save the new number
     const max_requests = document.getElementById("checkbox-max-requests").checked;
@@ -104,14 +116,6 @@ function sendConfiguration() {
     data["SR_skip"] = skip_songs;
     if (skip_songs) {
         data["SR_skip_number"] = document.getElementById("input-skip-songs").value;
-    }
-
-    // Song length
-    // If enabled, save the new number
-    const song_length = document.getElementById("checkbox-song-length").checked;
-    data["SR_length"] = song_length;
-    if (song_length) {
-        data["SR_length_number"] = document.getElementById("input-song-length").value;
     }
 
     // Spotify links

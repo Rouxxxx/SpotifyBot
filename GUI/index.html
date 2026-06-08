@@ -123,6 +123,26 @@
         <hr>
         <div class="row-section">
             <div class="column column-spaced">
+                <p class="options-title">Set maximum length for a song</p>
+                <label class="switch"> <input id="checkbox-song-length" type="checkbox" onchange="handleCheckboxInputChange('input-song-length')"> <span class="slider round"></span> </label>
+            </div>
+            <div class="column column-spaced">
+                <input disabled type="range" id="input-song-length" min="0" max="1000" value="300" step="10" onchange="setSliderValue(this.value, 'label-song-length')" />
+                <p id="label-song-length" class="slider-value">300</p>
+            </div>
+            <h4>Select the maximum length for song requests.<br>If disabled, any song can be queued.</h4>
+        </div>
+        <hr>
+        <div class="row-section">
+            <div class="column column-spaced">
+                <p class="options-title">Enable the queue system</p>
+                <label class="switch"> <input id="checkbox-songrequest-queue" type="checkbox" checked> <span class="slider round"></span> </label>
+            </div>
+            <h4>Lists every song queued by users.<br>Disabling this option will also disable the max number of songs per user, and the skip song features.</h4>
+        </div>
+        <hr>
+        <div class="row-section">
+            <div class="column column-spaced">
                 <p class="options-title">Max number of song requests per user</p>
                 <label class="switch"> <input id="checkbox-max-requests" type="checkbox" onchange="handleCheckboxInputChange('input-max-requests')"> <span class="slider round"></span> </label>
             </div>
@@ -130,7 +150,7 @@
                 <input disabled type="range" id="input-max-requests" min="1" max="20" value="5" step="1" onchange="setSliderValue(this.value, 'label-max-requests')" />
                 <p id="label-max-requests" class="slider-value">5</p>
             </div>
-            <h4>Sets the amount of songs a user can queue at the same time.<br>If disabled, users can queue as many songs as they want.</h4>
+            <h4>Sets the quota of songs a user can queue at the same time.<br>If disabled, users can queue as many songs as they want.</h4>
         </div>
         <hr>
         <div class="row-section">
@@ -143,18 +163,6 @@
                 <p id="label-skip-songs" class="slider-value">5</p>
             </div>
             <h4>Allow users to skip a song.<br>If disabled, songs cannot be skipped.</h4>
-        </div>
-        <hr>
-        <div class="row-section">
-            <div class="column column-spaced">
-                <p class="options-title">Set maximum length for a song</p>
-                <label class="switch"> <input id="checkbox-song-length" type="checkbox" onchange="handleCheckboxInputChange('input-song-length')"> <span class="slider round"></span> </label>
-            </div>
-            <div class="column column-spaced">
-                <input disabled type="range" id="input-song-length" min="0" max="1000" value="300" step="10" onchange="setSliderValue(this.value, 'label-song-length')" />
-                <p id="label-song-length" class="slider-value">300</p>
-            </div>
-            <h4>Select the maximum length for song requests.<br>If disabled, any song can be queued.</h4>
         </div>
         <hr>
         <div class="row-section">

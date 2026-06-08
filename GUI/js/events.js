@@ -168,6 +168,26 @@ function handleSetOptions(actionName, data) {
         const SR_vip = dataObj["SR_restriction_list"] === undefined ? false : dataObj["SR_restriction_list"]["vip"]
         setIfDefined(SR_vip, songrequest_restriction_vip, "checked");
 
+        
+        // Song length
+        const song_length_checkbox = document.getElementById("checkbox-song-length");
+        const song_length = document.getElementById("input-song-length");
+        const SR_length = dataObj["SR_length"];
+        setIfDefined((SR_length === undefined) ? undefined : !SR_length, song_length, "disabled");
+        setIfDefined(SR_length, song_length_checkbox, "checked");
+
+        // Song length number
+        const song_length_number = document.getElementById("input-song-length");
+        const song_length_label = document.getElementById("label-song-length");
+        const SR_length_number = dataObj["SR_length_number"];
+        setIfDefined(SR_length_number, song_length_number, "value");
+        setIfDefined(SR_length_number, song_length_label, "textContent");
+
+        // Queue system
+        const songrequest_queue = document.getElementById("checkbox-songrequest-queue");
+        const SR_queue = dataObj["SR_queue"];
+        setIfDefined(SR_queue, songrequest_queue, "checked");
+
         // Max requests
         const max_requests_checkbox = document.getElementById("checkbox-max-requests");
         const max_requests = document.getElementById("input-max-requests");
@@ -196,20 +216,7 @@ function handleSetOptions(actionName, data) {
         setIfDefined(SR_skip_number, skip_songs_number, "value");
         setIfDefined(SR_skip_number, skip_songs_label, "textContent");
 
-        // Song length
-        const song_length_checkbox = document.getElementById("checkbox-song-length");
-        const song_length = document.getElementById("input-song-length");
-        const SR_length = dataObj["SR_length"];
-        setIfDefined((SR_length === undefined) ? undefined : !SR_length, song_length, "disabled");
-        setIfDefined(SR_length, song_length_checkbox, "checked");
-
-        // Song length number
-        const song_length_number = document.getElementById("input-song-length");
-        const song_length_label = document.getElementById("label-song-length");
-        const SR_length_number = dataObj["SR_length_number"];
-        setIfDefined(SR_length_number, song_length_number, "value");
-        setIfDefined(SR_length_number, song_length_label, "textContent");
-
+        // Spotify links
         const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink");
         const SR_spotifylink = dataObj["SR_spotifylink"];
         setIfDefined(SR_spotifylink, songrequest_spotifylink, "checked");
