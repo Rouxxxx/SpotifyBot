@@ -25,6 +25,12 @@ public class CPHInline
     #region execute
     public bool Execute()
     {
+        bool queueActive = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_queue", false);
+        if (!queueActive)
+        {
+            CPH.SendMessage("Queue is disabled");
+            return true;
+        }
         string currentSong = CPH.GetGlobalVar<string>("SPOTIFYBOT_currentSong", false);
         string queueJSON = CPH.GetGlobalVar<string>("SPOTIFYBOT_queue", false);
 
