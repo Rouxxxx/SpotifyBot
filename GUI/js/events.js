@@ -145,6 +145,10 @@ function handleSetOptions(actionName, data) {
     const mode = data.mode;
     if (mode == "get")
     {
+        // If blank data, return
+        if (data.data === undefined) {
+            return;
+        }
         const dataObj = JSON.parse(data.data);
 
         // Song request restriction
@@ -155,11 +159,14 @@ function handleSetOptions(actionName, data) {
 
         // Song request restriction list
         const songrequest_restriction_follower = document.getElementById("checkbox-restriction-follower");
-        setIfDefined(dataObj["SR_restriction_list"]["follower"], songrequest_restriction_follower, "checked");
+        const SR_follower = dataObj["SR_restriction_list"] === undefined ? false : dataObj["SR_restriction_list"]["follower"]
+        setIfDefined(SR_follower, songrequest_restriction_follower, "checked");
         const songrequest_restriction_subscriber = document.getElementById("checkbox-restriction-subscriber");
-        setIfDefined(dataObj["SR_restriction_list"]["subscriber"], songrequest_restriction_subscriber, "checked");
+        const SR_subscriber = dataObj["SR_restriction_list"] === undefined ? false : dataObj["SR_restriction_list"]["subscriber"]
+        setIfDefined(SR_subscriber, songrequest_restriction_follower, "checked");
         const songrequest_restriction_vip = document.getElementById("checkbox-restriction-vip");
-        setIfDefined(dataObj["SR_restriction_list"]["vip"], songrequest_restriction_vip, "checked");
+        const SR_vip = dataObj["SR_restriction_list"] === undefined ? false : dataObj["SR_restriction_list"]["vip"]
+        setIfDefined(SR_vip, songrequest_restriction_vip, "checked");
 
         // Max requests
         const max_requests_checkbox = document.getElementById("checkbox-max-requests");
