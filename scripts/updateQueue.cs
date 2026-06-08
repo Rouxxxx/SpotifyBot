@@ -29,7 +29,7 @@ public class CPHInline
         //if (!CPH.ObsIsStreaming())
         //    return false;
         string queueJSON = CPH.GetGlobalVar<string>("SPOTIFYBOT_queue", false);
-        List<QueueItem> queue = JsonConvert.DeserializeObject<List<QueueItem>>(queueJSON);
+        List<QueueItem> queue = string.IsNullOrEmpty(queueJSON) ? new() : JsonConvert.DeserializeObject<List<QueueItem>>(queueJSON);
         // If queue is empty, no need to do anything
         if (queue.Count == 0)
         {
