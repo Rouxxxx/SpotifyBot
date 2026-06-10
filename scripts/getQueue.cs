@@ -16,10 +16,12 @@ public class QueueItem
     public string username { get; set; }
     public string trackURI { get; set; }
     public string trackName { get; set; }
+    public string artistName { get; set; }
 }
 
 public class CPHInline
 {
+    private static string defaultSongUser = string.Empty;
 	private static HttpClient _http;
 
     #region execute
@@ -31,7 +33,6 @@ public class CPHInline
             CPH.SendMessage("Queue is disabled");
             return true;
         }
-        string currentSong = CPH.GetGlobalVar<string>("SPOTIFYBOT_currentSong", false);
         string queueJSON = CPH.GetGlobalVar<string>("SPOTIFYBOT_queue", false);
 
         // If queue is empty, no need to do anything
@@ -43,13 +44,13 @@ public class CPHInline
 
         // If queue is empty, no need to do anything
         List<QueueItem> queue = JsonConvert.DeserializeObject<List<QueueItem>>(queueJSON);
-        if (queue == null || queue.Count == 0 || (queue.Count == 1 && queue[0].trackURI == currentSong))
+        if (queue == null || queue.Count == 0)
         {
             CPH.SendMessage("Queue is empty");
             return true;
         }
 
-        string message = buildQueueMessage(queue, currentSong);
+        string message = BuildQueueMessage(queue);
         CPH.SendMessage(message);
         return true;
     }
@@ -57,14 +58,15 @@ public class CPHInline
 
     #region command
     // Builds message containing queue info
-    public string buildQueueMessage(List<QueueItem> queue, string currentSong)
+    public string BuildQueueMessage(List<QueueItem> queue)
     {
         string message = string.Empty;
-        for (int id = 0; id < queue.Count; id++) 
+        // Skip first element (current song)
+        for (int id = 1; id < queue.Count; id++) 
         {
-            // Skip first element if it's the current song  playing
             QueueItem item = queue[id];
-            if (id == 0 && item.trackURI == currentSong)
+            // Skip elements addded manually
+            if (item.username == defaultSongUser)
             {
                 continue;
             }
@@ -72,9 +74,9 @@ public class CPHInline
             // Add current song to the list
             if (!string.IsNullOrEmpty(message))
             {
-                message += "\n";
+                message += ", ";
             }
-            message += item.trackName;
+            message += $"[{item.trackName} | {item.artistName}]";
         }
         return message;
     }

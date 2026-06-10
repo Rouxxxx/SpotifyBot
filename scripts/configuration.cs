@@ -16,7 +16,7 @@ public class CPHInline
     private static JObject defaultOptions = new JObject
     {
         ["SR_restriction"] = false,
-        ["SR_restriction"] = {},
+        ["SR_restriction_list"] = {},
         ["SR_length"] = false,
         ["SR_length_number"] = 300,
 
@@ -27,6 +27,7 @@ public class CPHInline
         ["SR_skip_number"] = 5,
 
         ["SR_spotifylink"] = true,
+        ["SR_youtubelink"] = true,
     };
 
     #region execute
@@ -115,6 +116,10 @@ public class CPHInline
         // Spotify links
         bool spotifyLinks = GetOption<bool>(argsRoot, "SR_spotifylink");
         configurationRoot["SR_spotifylink"] = spotifyLinks;
+
+        // Youtube links
+        bool youtubeLinks = GetOption<bool>(argsRoot, "SR_youtubelink");
+        configurationRoot["SR_youtubelink"] = youtubeLinks;
 
         // Save configuration
         string json = configurationRoot.ToString(Newtonsoft.Json.Formatting.None);

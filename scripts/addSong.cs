@@ -19,13 +19,7 @@ public class QueueItem
     public string username { get; set; }
     public string trackURI { get; set; }
     public string trackName { get; set; }
-}
-
-public class Song
-{
-    public string artist { get; set; }
-    public string name { get; set; }
-    public string URI { get; set; }
+    public string artistName { get; set; }
 }
 
 public enum TrackError
@@ -53,9 +47,27 @@ public class CPHInline
             CPH.SendMessage("No input found in request");
             return true;
         }
+        input = SanitizeString(input);
 
         string user;
         CPH.TryGetArg("user", out user);
+
+        TwitchUserInfoEx userInfo = CPH.TwitchGetExtendedUserInfoByLogin(user);
+        bool follower = userInfo.IsFollowing;
+        bool subscriber = userInfo.IsSubscribed;
+        bool vip = userInfo.IsVip;
+
+        bool restriction = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_restriction", false);
+        bool restriction_follower = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_restriction_follower", false);
+        bool restriction_subscriber = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_restriction_subscriber", false);
+        bool restriction_vip = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_restriction_vip", false);
+
+        // If user doesn't match a restriction, abort
+        if (restriction && ((restriction_follower && !follower) || (restriction_subscriber && !subscriber) || (restriction_vip && !vip)))
+        {
+            CPH.SendMessage("User doesn't have permission to request songs");
+            return true;
+        }
 
         bool maxRequests = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_maxuser", false);
         int max = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_maxuser_number", false);
@@ -76,12 +88,13 @@ public class CPHInline
         }
 
         // Init variables
-        string songURI = string.Empty;
-        string songInfo = string.Empty;
+        QueueItem track = null;
         int songDuration = 0;
         int error = 0;
         bool isSpotifyLink = false;
+        bool isYoutubeLink = false;
         bool spotifyLinksAllowed = false;
+        bool youtubeLinksAllowed = false;
 
         bool songLength = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_length", false);
         // Convert s to ms
@@ -91,7 +104,9 @@ public class CPHInline
         {
             try
             {
-                isSpotifyLink = Regex.IsMatch(input, @"^https?:\/\/[^\s\/$.?#].[^\s]*$", RegexOptions.IgnoreCase);
+                bool isLink = Regex.IsMatch(input, @"^https?:\/\/[^\s\/$.?#].[^\s]*$", RegexOptions.IgnoreCase);
+                isSpotifyLink = input.Contains("spotify.com");
+                isYoutubeLink = input.Contains("youtube.com") || input.Contains("youtu.be");
                 // If URL, just add it to the queue
                 if (isSpotifyLink)
                 {
@@ -102,16 +117,36 @@ public class CPHInline
                         error = (int)TrackError.linksNotAllowed;
                         return;
                     }
-                    (songURI, songInfo, songDuration) = await FetchSpotifyLinkInfo(accessToken, input);
+                    (track, songDuration) = await FetchSpotifyLinkInfo(accessToken, input);
+                }
+                // If youtube URL, try and search the song
+                else if (isYoutubeLink)
+                {
+                    // Tracking spotify links not allowed
+                    youtubeLinksAllowed = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_youtubelink", false);
+                    if (!youtubeLinksAllowed)
+                    {
+                        error = (int)TrackError.linksNotAllowed;
+                        return;
+                    }
+                    string songInfo = await FetchYoutubeLinkInfo(input);
+                    songInfo = SanitizeString(songInfo);
+                    CPH.SendMessage($"found {songInfo}");
+                    if (string.IsNullOrEmpty(songInfo))
+                    {
+                        error = (int)TrackError.notFound;
+                        return;
+                    }
+                    (track, songDuration) = await SearchTrack(accessToken, songInfo);
                 }
                 // If normal request, search for the track
                 else
                 {
-				    (songURI, songInfo, songDuration) = await SearchTrack(accessToken, input);
+				    (track, songDuration) = await SearchTrack(accessToken, input);
                 }
 
                 // Tracking song not found
-                if (string.IsNullOrEmpty(songURI) || string.IsNullOrEmpty(songInfo))
+                if (track == null)
                 {
                     error = (int)TrackError.notFound;
                     return;
@@ -124,7 +159,7 @@ public class CPHInline
                 }
 
                 // Add track to queue
-                int trackReturn = await AddTrackToQueue(accessToken, songURI);
+                int trackReturn = await AddTrackToQueue(accessToken, track.trackURI);
                 if (trackReturn != 200)
                 {
                     error = (int)TrackError.addTrackError;
@@ -150,12 +185,13 @@ public class CPHInline
                 }
                 case (int)TrackError.tooLong:
                 {
-                    CPH.SendMessage($"Song [{songInfo}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
+                    CPH.SendMessage($"Song [{track.trackName} | {track.artistName}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
                     break;
                 }
                 case (int)TrackError.linksNotAllowed:
                 {
-                    CPH.SendMessage($"Spotify links are forbidden");
+                    string msg = (isSpotifyLink) ? "Spotify" : "Youtube";
+                    CPH.SendMessage($"{msg} links are forbidden");
                     break;
                 }
                 case (int)TrackError.addTrackError:
@@ -169,8 +205,8 @@ public class CPHInline
         }
 
         // Add song to the internal queue, and send message to user
-        AddTrackToInternalQueue(user, songURI, songInfo);
-        CPH.SendMessage($"Added [{songInfo}] to the queue");
+        AddTrackToInternalQueue(user, track);
+        CPH.SendMessage($"Added [{track.trackName} | {track.artistName}] to the queue");
 
         return true;
     }
@@ -250,7 +286,6 @@ public class CPHInline
 
         CPH.LogDebug($"HTTP Request: [{URI}] Reponse code: {statusCode}");
         
-
         // If error, just return code with empty json
         if (!response.IsSuccessStatusCode)
             return (statusCode, string.Empty);
@@ -285,14 +320,52 @@ public class CPHInline
         return null;
     }
 
+    // Find track info from a youtube link
+    private async Task<string> FetchYoutubeLinkInfo(string URL)
+    {
+        // Fetch youtube API
+        string response = string.Empty;
+        try { response = await _http.GetStringAsync(URL); }
+        catch (Exception ex) { }
+        if (string.IsNullOrEmpty(response))
+        {
+            return string.Empty;
+        }
+
+        // Find the div in the response
+        string pattern = @"var\s+ytInitialPlayerResponse\s*=\s*(\{.*?\});";
+        var match = System.Text.RegularExpressions.Regex.Match(response, pattern, System.Text.RegularExpressions.RegexOptions.Singleline);
+        if (!match.Success)
+        {
+            return string.Empty;
+        }
+
+        // Find details in JSON
+        string jsonStr = match.Groups[1].Value;
+        JObject initialResponse = JObject.Parse(jsonStr);
+        JObject videoDetails = initialResponse["videoDetails"] as JObject;
+        if (videoDetails == null)
+        {
+            return string.Empty;
+        }
+        CPH.SendMessage(videoDetails.ToString());
+                
+        string title = videoDetails["title"]?.ToString();
+        string author = videoDetails["author"]?.ToString();
+        //LogIt($"Extracted from ytInitialPlayerResponse => Title: {title}, Author: {author}");
+
+        return $"{title}";// {author}";
+    }
+
+
     // Add a track to the queue from a link
-    private async Task<(string songURI, string songInfo, int songDuration)> FetchSpotifyLinkInfo(string accessToken, string URL)
+    private async Task<(QueueItem track, int songDuration)> FetchSpotifyLinkInfo(string accessToken, string URL)
     {
         // Get track URI
         string trackID = GetSpotifyTrackID(URL);
         if (string.IsNullOrEmpty(trackID))
         {
-            return (string.Empty, string.Empty, 0);
+            return (null, 0);
         }
 
         string URI = $"https://api.spotify.com/v1/tracks/{trackID}";
@@ -316,7 +389,7 @@ public class CPHInline
     private bool CanUserAddTrackInQueue(bool isEnabled, int max, string username)
     {
         // If max request number isn't enabled, allow all requests
-        if (!isEnabled) 
+        if (!isEnabled)
         {
             return true;
         }
@@ -342,16 +415,13 @@ public class CPHInline
     }
 
     // Add a track to StreamerBot's internal queue, to check and limit how much songs users can add
-    private void AddTrackToInternalQueue(string username, string songURI, string songInfo)
+    private void AddTrackToInternalQueue(string username, QueueItem track)
     {
         string json = CPH.GetGlobalVar<string>("SPOTIFYBOT_queue", false);
         List<QueueItem> queue = string.IsNullOrEmpty(json) ? new() : JsonConvert.DeserializeObject<List<QueueItem>>(json);
-        queue.Add(new QueueItem
-        {
-            username = username,
-            trackURI = songURI,
-            trackName = songInfo
-        });
+
+        track.username = username;
+        queue.Add(track);
 
         json = JsonConvert.SerializeObject(queue);
         CPH.SetGlobalVar("SPOTIFYBOT_queue", json, false);
@@ -360,7 +430,7 @@ public class CPHInline
 
     #region searchSong
     // Search a track and return its uri
-    private async Task<(string songURI, string songInfo, int songDuration)> SearchTrack(string accessToken, string query)
+    private async Task<(QueueItem track, int songDuration)> SearchTrack(string accessToken, string query)
     {
         string URI = $"https://api.spotify.com/v1/search?limit=10&market=US&type=track&q=track:{query}";
         var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
@@ -368,7 +438,7 @@ public class CPHInline
         // Error handling
         if (string.IsNullOrWhiteSpace(json))
         {
-            return (string.Empty, string.Empty, 0);
+            return (null, 0);
         }
 
         // Parse the JSON response
@@ -441,28 +511,36 @@ public class CPHInline
         }
         return artistsString;
     }
-
     #endregion
 
     #region command
-    private (string songURI, string songInfo, int duration) GetTrackInfo(JToken item)
+    // Parse a Spotify API track into a QueueItem
+    private (QueueItem track, int duration) GetTrackInfo(JToken item)
     {
         if (item == null)
         {
-            return (string.Empty, string.Empty, 0);
+            return (null, 0);
         }
 
         // Extract song URI
-        string? songURI = item["uri"]?.ToString();
+        string? trackURI = item["uri"]?.ToString();
         // Extract song name
-        string? songName = item["name"]?.ToString();
+        string? trackName = item["name"]?.ToString();
         // Extract artist name
         string? artistName = item["artists"]?[0]?["name"]?.ToString();
 
         // Order and return song info
         int duration = (int)item["duration_ms"] / 1000;
-        string songInfo = $"{songName} | {artistName}";
-        return (songURI, songInfo, duration);
+
+        QueueItem track = new QueueItem{ username = null, trackURI = trackURI, trackName = trackName, artistName = artistName };
+        return (track, duration);
+    }
+
+    private string SanitizeString(string input)
+    {
+        string res = Regex.Replace(input, @"\([^)]*\)", "");
+        res = Regex.Replace(res, @"\[[^\]]*\]", "");
+        return res;
     }
     #endregion
 }

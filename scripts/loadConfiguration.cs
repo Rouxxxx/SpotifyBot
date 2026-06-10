@@ -73,6 +73,10 @@ public class CPHInline
         // Spotify links
         bool spotifyLinks = configuration["SR_spotifylink"]?.ToObject<bool>() ?? false;
         CPH.SetGlobalVar("SPOTIFYBOT_SR_spotifylink", spotifyLinks, false);
+
+        // Spotify links
+        bool youtubeLinks = configuration["SR_youtubelink"]?.ToObject<bool>() ?? false;
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_youtubelink", youtubeLinks, false);
     }
 
     // Enable or disable the queue system
