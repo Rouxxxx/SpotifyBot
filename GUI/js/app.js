@@ -122,5 +122,9 @@ function sendConfiguration() {
     const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink").checked;
     data["SR_spotifylink"] = songrequest_spotifylink;
 
+    // Youtube links
+    const songrequest_youtubelink = document.getElementById("checkbox-songrequest-youtubelink").checked;
+    data["SR_youtubelink"] = songrequest_youtubelink;
+
     sendAction("SPOTIFYBOT - GUI - Configuration", {data: data});
 }

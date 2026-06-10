@@ -221,6 +221,11 @@ function handleSetOptions(actionName, data) {
         const SR_spotifylink = dataObj["SR_spotifylink"];
         setIfDefined(SR_spotifylink, songrequest_spotifylink, "checked");
 
+        // Spotify links
+        const songrequest_youtubelink = document.getElementById("checkbox-songrequest-youtubelink");
+        const SR_youtubelink = dataObj["SR_youtubelink"];
+        setIfDefined(SR_youtubelink, songrequest_youtubelink, "checked");
+
         return;
     }
     if (status != 200) {
