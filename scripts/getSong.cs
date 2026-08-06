@@ -10,6 +10,15 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
+[Serializable]
+public class QueueItem
+{
+    public string username { get; set; }
+    public string trackURI { get; set; }
+    public string trackName { get; set; }
+    public string artistName { get; set; }
+}
+
 public class CPHInline
 {
 	private static HttpClient _http;
@@ -45,17 +54,55 @@ public class CPHInline
 
         if (error)
         {
-            CPH.SendMessage("Error during GetMusicPlaying (check logs for more information).");
+            CPH.SendMessage("Error getting current song.");
         }
         if (string.IsNullOrEmpty(song))
         {
             CPH.SendMessage("No song is playing");
             return true;
         }
-        CPH.SendMessage($"{song}");
+
+        bool queueActive = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_queue", false);
+        if (!queueActive)
+        {
+            CPH.SendMessage($"[{song}]");
+            return true;
+        }
+
+        string currently_playingJSON = CPH.GetGlobalVar<string>("SPOTIFYBOT_currentsong", false);
+        QueueItem currently_playing = string.IsNullOrEmpty(currently_playingJSON) ? null : JsonConvert.DeserializeObject<QueueItem>(currently_playingJSON);
+        if (currently_playing == null || string.IsNullOrEmpty(currently_playing.username))
+        {
+            CPH.SendMessage($"[{song}]");
+            return true;
+        }
+
+        CPH.SendMessage($"[{song}] requested by {currently_playing.username}");
         return true;
     }
     #endregion
+
+    #region init
+	// Init variables before run
+	public void Init()
+    {
+        if (_http == null)
+        {
+            _http = new HttpClient
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+        }
+        _http.DefaultRequestHeaders.Clear();
+    }
+
+	// Dispose variables after run
+    public void Dispose()
+    {
+        _http?.Dispose();
+    }
+	#endregion
+
 
     #region APIutils
     private (string accessToken, DateTime expiresAt) InitAPI()
