@@ -99,7 +99,7 @@ public class CPHInline
     }
 
 	// Send a HTTP request and parse the JSON body of the response
-	private async Task<(int code, string json)> ProcessAPIRequest(string accessToken, string URI, HttpMethod method)
+	private async Task<(int code, string json)> ProcessAPIRequest(string accessToken, string URI, HttpMethod method, int retries = 1)
     {
         var request = new HttpRequestMessage(method, URI);
         request.Headers.Add("Authorization", $"Bearer {accessToken}");
@@ -109,9 +109,13 @@ public class CPHInline
 
         CPH.LogDebug($"HTTP Request: [{URI}] Reponse code: {statusCode}");
 
-        // If error, just return code with empty json
-        if (!response.IsSuccessStatusCode)
+        // If error, retries up to 5 times
+        if (!response.IsSuccessStatusCode) {
+            if (retries < 5) {
+                return await ProcessAPIRequest(accessToken, URI, method, retries + 1);
+            }
             return (statusCode, string.Empty);
+        }
 
         string json = await response.Content.ReadAsStringAsync();
         return (statusCode, json);

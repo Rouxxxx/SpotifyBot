@@ -274,29 +274,30 @@ public class CPHInline
     }
 
 	// Send a HTTP request and parse the JSON body of the response
-	private async Task<(int code, string json)> ProcessAPIRequest(string accessToken, string URI, HttpMethod method)
+	private async Task<(int code, string json)> ProcessAPIRequest(string accessToken, string URI, HttpMethod method, int retries = 1)
     {
-        var request = new HttpRequestMessage(
-            method,
-            URI);
+        var request = new HttpRequestMessage(method, URI);
         request.Headers.Add("Authorization", $"Bearer {accessToken}");
 
         var response = await _http.SendAsync(request);
         int statusCode = (int)response.StatusCode;
 
         CPH.LogDebug($"HTTP Request: [{URI}] Reponse code: {statusCode}");
-        
-        // If error, just return code with empty json
-        if (!response.IsSuccessStatusCode)
+
+        // If error, retries up to 5 times
+        if (!response.IsSuccessStatusCode) {
+            if (retries < 2) {
+                return await ProcessAPIRequest(accessToken, URI, method, retries + 1);
+            }
             return (statusCode, string.Empty);
+        }
 
         string json = await response.Content.ReadAsStringAsync();
-        CPH.LogDebug($"HTTP Request: [{URI}] JSON: {json}");
         return (statusCode, json);
     }
     #endregion
 
-    #region addSong
+    #region links
     private static string GetSpotifyTrackID(string URL)
     {
         // Create URI object from URL
