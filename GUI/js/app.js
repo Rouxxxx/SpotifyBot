@@ -118,6 +118,15 @@ function sendConfiguration() {
         data["SR_skip_number"] = document.getElementById("input-skip-songs").value;
     }
 
+    // Timeout users
+    // If enabled, save the new number and duration
+    const timeout_users = document.getElementById("checkbox-timeout-users").checked;
+    data["SR_timeout"] = timeout_users;
+    if (timeout_users) {
+        data["SR_timeout_number"] = document.getElementById("input-timeout-users").value;
+        data["SR_timeout_duration"] = document.getElementById("input-timeout-duration").value;
+    }
+
     // Spotify links
     const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink").checked;
     data["SR_spotifylink"] = songrequest_spotifylink;

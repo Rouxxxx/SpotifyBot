@@ -163,6 +163,23 @@
                 <p id="label-skip-songs" class="slider-value">5</p>
             </div>
             <h4>Allow users to skip a song.<br>If disabled, songs cannot be skipped.</h4>
+            <div class="column column-spaced">
+                <p class="options-title">Allow users timeout</p>
+                <label class="switch"> <input id="checkbox-timeout-users" type="checkbox" onchange="handleCheckboxInputChange('input-timeout-users'); handleCheckboxInputChange('input-timeout-duration')"> <span class="slider round"></span> </label>
+            </div>
+            <div class="column column-spaced">
+                <input disabled type="range" id="input-timeout-users" min="1" max="10" value="2" step="1" onchange="setSliderValue(this.value, 'label-timeout-users')" />
+                <p id="label-timeout-users" class="slider-value">2</p>
+            </div>
+            <h4>Allow users to be timed out if too much of their songs are skipped (number to corresponds to amount of skips before a timeout).</h4>
+            <div class="column column-spaced">
+                <p class="options-title">Timeout duration</p>
+            </div>
+            <div class="column column-spaced">
+                <input disabled type="range" id="input-timeout-duration" min="10" max="500" value="120" step="1" onchange="setSliderValue(this.value, 'label-timeout-duration')" />
+                <p id="label-timeout-duration" class="slider-value">120</p>
+            </div>
+            <h4>Set the timeout duration for an user (in minutes).</h4>
         </div>
         <hr>
         <div class="row-section">

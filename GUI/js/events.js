@@ -216,6 +216,28 @@ function handleSetOptions(actionName, data) {
         setIfDefined(SR_skip_number, skip_songs_number, "value");
         setIfDefined(SR_skip_number, skip_songs_label, "textContent");
 
+        // Timeout 
+        const timeout_checkbox = document.getElementById("checkbox-timeout-users");
+        const timeout = document.getElementById("input-timeout-users");
+        const timeout2 = document.getElementById("input-timeout-duration");
+        const SR_timeout = dataObj["SR_timeout"];
+        setIfDefined((SR_timeout === undefined) ? undefined : !SR_timeout, timeout, "disabled");
+        setIfDefined((SR_timeout === undefined) ? undefined : !SR_timeout, timeout2, "disabled");
+        setIfDefined(SR_timeout, timeout_checkbox, "checked");
+        // Timeout number
+        const timeout_users_number = document.getElementById("input-timeout-users");
+        const timeout_users_label = document.getElementById("label-timeout-users");
+        const SR_timeout_number = dataObj["SR_timeout_number"];
+        setIfDefined(SR_timeout_number, timeout_users_number, "value");
+        setIfDefined(SR_timeout_number, timeout_users_label, "textContent");
+
+        // Timeout duration
+        const timeout_duration_number = document.getElementById("input-timeout-duration");
+        const timeout_duration_label = document.getElementById("input-timeout-duration");
+        const SR_timeout_duration = dataObj["SR_timeout_duration"];
+        setIfDefined(SR_timeout_duration, timeout_duration_number, "value");
+        setIfDefined(SR_timeout_duration, timeout_duration_label, "textContent");
+
         // Spotify links
         const songrequest_spotifylink = document.getElementById("checkbox-songrequest-spotifylink");
         const SR_spotifylink = dataObj["SR_spotifylink"];
