@@ -44,13 +44,19 @@ public class CPHInline
 
         // If queue is empty, no need to do anything
         List<QueueItem> queue = JsonConvert.DeserializeObject<List<QueueItem>>(queueJSON);
-        if (queue == null || queue.Count == 0)
+        if (queue == null || queue.Count < 2)
         {
             CPH.SendMessage("Queue is empty");
             return true;
         }
 
         string message = BuildQueueMessage(queue);
+        // If queue returned empty, show empty queue
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            CPH.SendMessage("Queue is empty");
+            return true;
+        }
         CPH.SendMessage(message);
         return true;
     }
