@@ -62,6 +62,16 @@ public class CPHInline
             CPH.SetGlobalVar("SPOTIFYBOT_SR_skip_number", skipSongsNumber, false);
         }
 
+        // Timeout users
+        bool timeout = configuration["SR_timeout"]?.ToObject<bool>() ?? false;
+        CPH.SetGlobalVar("SPOTIFYBOT_SR_timeout", timeout, false);
+        if (timeout) {
+            int timeoutNumber = configuration["SR_timeout_number"]?.ToObject<int>() ?? 0;
+            CPH.SetGlobalVar("SPOTIFYBOT_SR_timeout_number", timeoutNumber, false);
+            int timeoutDuration = configuration["SR_timeout_duration"]?.ToObject<int>() ?? 0;
+            CPH.SetGlobalVar("SPOTIFYBOT_SR_timeout_duration", timeoutDuration, false);
+        }
+
         // Song length
         bool songLength = configuration["SR_length"]?.ToObject<bool>() ?? false;
         CPH.SetGlobalVar("SPOTIFYBOT_SR_length", songLength, false);

@@ -26,6 +26,10 @@ public class CPHInline
         ["SR_skip"] = false,
         ["SR_skip_number"] = 5,
 
+        ["SR_timeout"] = true,
+        ["SR_timeout_number"] = 2,
+        ["SR_timeout_duration"] = 120,
+
         ["SR_spotifylink"] = true,
         ["SR_youtubelink"] = true,
     };
@@ -111,6 +115,16 @@ public class CPHInline
         if (skipSongs) {
             int SR_skip_number = GetOption<int>(argsRoot, "SR_skip_number");
             configurationRoot["SR_skip_number"] = SR_skip_number;
+        }
+
+        // Timeout user
+        bool timeout = GetOption<bool>(argsRoot, "SR_timeout");
+        configurationRoot["SR_timeout"] = timeout;
+        if (timeout) {
+            int SR_timeout_number = GetOption<int>(argsRoot, "SR_timeout_number");
+            configurationRoot["SR_timeout_number"] = SR_timeout_number;
+            int SR_timeout_duration = GetOption<int>(argsRoot, "SR_timeout_duration");
+            configurationRoot["SR_timeout_duration"] = SR_timeout_duration;
         }
 
         // Spotify links
