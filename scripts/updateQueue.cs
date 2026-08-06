@@ -49,12 +49,18 @@ public class CPHInline
         List<QueueItem> queueAPI = null;
         QueueItem currentTrackAPI = null;
         int progressMS = 0;
+        bool sameSongPlaying = true;
 
         Task.Run(async () =>
         {
             try
             {
                 // Get current queue info
+                sameSongPlaying = await IsCurrentSongPlaying(accessToken);
+                if (sameSongPlaying)
+                {
+                    return;
+                }
                 queueAPI = await GetPlayerInfo(accessToken);
 
             }
@@ -65,17 +71,16 @@ public class CPHInline
             }
         }).GetAwaiter().GetResult();
 
+        if (sameSongPlaying)
+        {
+            return true;
+        }
+
         bool songChanged = false;
         QueueItem newFirst = null;
-        (songChanged, newFirst) = UpdateInternalQueue(queue, queueAPI);
+        UpdateInternalQueue(queue, queueAPI);
 
-        // If song changed, change variable and trigger song change
-        if (songChanged && (newFirst != null))
-        {
-            string currentSongSTR = JsonConvert.SerializeObject(newFirst);
-            CPH.SetGlobalVar("SPOTIFYBOT_currentsong", currentSongSTR, false);
-            CPH.RunAction("SPOTIFYBOT - EVENT - New song");
-        }
+        CPH.RunAction("SPOTIFYBOT - EVENT - New song");
         return true;
     }
     #endregion
@@ -208,6 +213,33 @@ public class CPHInline
         return queue;
     }
 
+    // Check if current song is still playing
+    private async Task<bool> IsCurrentSongPlaying(string accessToken)
+    {
+        // Get currently playing song
+        string URI = $"https://api.spotify.com/v1/me/player/currently-playing";
+        var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
+        if (status != 200 || string.IsNullOrEmpty(json))
+        {
+            return true;
+        }
+
+        // Parse JSON string
+        JObject root = JObject.Parse(json);
+        JToken track = root["item"];
+        QueueItem item = GetQueueItem(track);
+
+        // Compare with stored current song
+        string currently_playingJSON = CPH.GetGlobalVar<string>("SPOTIFYBOT_currentsong", false);
+        QueueItem currently_playing = string.IsNullOrEmpty(currently_playingJSON) ? null : JsonConvert.DeserializeObject<QueueItem>(currently_playingJSON);
+        if (currently_playing == null && item != null)
+        {
+            return false;
+        }
+
+        return item.trackURI == currently_playing.trackURI;
+    }
+
     // Check current state of Spotify player
     private async Task<List<QueueItem>> GetPlayerInfo(string accessToken)
     {
@@ -237,41 +269,23 @@ public class CPHInline
 
     #region updatedata
     // Update the internal queue by comparing it with the API
-    private (bool songChanged, QueueItem song) UpdateInternalQueue(List<QueueItem> queue, List<QueueItem> queueAPI)
+    private void UpdateInternalQueue(List<QueueItem> queue, List<QueueItem> queueAPI)
     {
         // Compute new queue
         List<QueueItem> newQueue = UpdateQueue(queue, queueAPI);
         if (newQueue.Count == 0)
         {
             CPH.SetGlobalVar("SPOTIFYBOT_queue", "[]", false);
-            return ((queue.Count != 0), null);
+            CPH.SetGlobalVar("SPOTIFYBOT_currentsong", "", false);
+            return;
         }
 
-        // Edit queue in config only if it changed
-        bool changed = (queue.Count != newQueue.Count);
-        if (!changed)
-        {
-            for (int id = 0; id < queue.Count; id++) 
-            {
-                // Compare by trackURI      
-                string URI1 = queue[id].trackURI;
-                string URI2 = newQueue[id].trackURI;
-                if (URI1 != URI2)
-                {
-                    changed = true;
-                    break;
-                }
-            }
-        }
-        if (changed)
-        {
-            string queueJSON = JsonConvert.SerializeObject(newQueue);
-            CPH.SetGlobalVar("SPOTIFYBOT_queue", queueJSON, false);
-        }
-        // Track song change by comparing first song in old and new queue
-        bool firstChanged = (queue.Count > 0 && queue[0].trackURI != newQueue[0].trackURI);
+        // Edit queue in config 
+        string queueJSON = JsonConvert.SerializeObject(newQueue);
+        CPH.SetGlobalVar("SPOTIFYBOT_queue", queueJSON, false);
 
-        return (firstChanged, newQueue[0]);
+        string currentSongSTR = JsonConvert.SerializeObject(newQueue[0]);
+        CPH.SetGlobalVar("SPOTIFYBOT_currentsong", currentSongSTR, false);
     }
 
     // Try to find a match in the internal queue, starting from IDqueue
