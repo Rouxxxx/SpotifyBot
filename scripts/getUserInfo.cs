@@ -55,7 +55,7 @@ public class CPHInline
         // If fail, return empty response
         if (status != 200)
         {
-            SendResponse(args, 403, null);
+            SendResponse(args, status, null);
             return true;
         } 
 
