@@ -13,6 +13,15 @@ using System.Threading.Tasks;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+[Serializable]
+public class QueueItem
+{
+    public string username { get; set; }
+    public string trackURI { get; set; }
+    public string trackName { get; set; }
+    public string artistName { get; set; }
+}
+
 public class CPHInline
 {
 	private static HttpClient _http;
@@ -31,28 +40,35 @@ public class CPHInline
         // Load variables
         string user;
         CPH.TryGetArg("user", out user);
-        string usersSkipping = CPH.GetGlobalVar<string>("SPOTIFYBOT_SR_usersSkipping", false);
 
-        // If user cannot skip, abort
-        bool checkSkip = CanUserSkipTrack(user, usersSkipping);
-        if (!checkSkip)
+        // If user is a mod using force command, skip verification
+        CPH.TryGetArg("force", out string force);
+        if (string.IsNullOrEmpty(force))
         {
-            CPH.SendMessage($"@{user} already voted to skip the song");
-            return true;
-        }
+            string usersSkipping = CPH.GetGlobalVar<string>("SPOTIFYBOT_SR_usersSkipping", false);
 
-        // Add user to the list
-        usersSkipping = string.IsNullOrEmpty(usersSkipping) ? user : $"{usersSkipping};{user}";
-        CPH.SetGlobalVar("SPOTIFYBOT_SR_usersSkipping", usersSkipping, false);
+            // If user cannot skip, abort
+            bool checkSkip = CanUserSkipTrack(user, usersSkipping);
+            if (!checkSkip)
+            {
+                CPH.SendMessage($"@{user} already voted to skip the song");
+                return true;
+            }
 
-        // Check if sufficient amount to skip has been reached
-        int skipNumber = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_skip_number", false);
-        int currentSkippingNumber = Regex.Matches(usersSkipping, ";").Count + 1;
-        // If cannot skip, return
-        if (currentSkippingNumber < skipNumber)
-        {
-            CPH.SendMessage($"@{user} voted to skip the track! ({currentSkippingNumber} / {skipNumber})");
-            return true;
+            // Add user to the list
+            usersSkipping = string.IsNullOrEmpty(usersSkipping) ? user : $"{usersSkipping};{user}";
+            CPH.SetGlobalVar("SPOTIFYBOT_SR_usersSkipping", usersSkipping, false);
+
+            // Check if sufficient amount to skip has been reached
+            int skipNumber = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_skip_number", false);
+            int currentSkippingNumber = Regex.Matches(usersSkipping, ";").Count + 1;
+            // If cannot skip, return
+            if (currentSkippingNumber < skipNumber)
+            {
+                CPH.SendMessage($"@{user} voted to skip the track! ({currentSkippingNumber} / {skipNumber})");
+                return true;
+            }
+
         }
 
         // Init user credentials
@@ -89,6 +105,13 @@ public class CPHInline
                 return;
             }
         }).GetAwaiter().GetResult();;
+
+        // Run update in 2 seconds
+        Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            CPH.RunAction("SPOTIFYBOT - Update Queue", false);
+        });
 
         // Song is skipped
         CPH.SetGlobalVar("SPOTIFYBOT_SR_usersSkipping", string.Empty, false);
