@@ -52,6 +52,16 @@ public class CPHInline
         string user;
         CPH.TryGetArg("user", out user);
 
+        bool isTimedOut = CPH.GetTwitchUserVar<bool>(user, "SPOTIFYBOT_timedout", false);
+        if (isTimedOut)
+        {
+            CPH.SendMessage($"{user} you're currently timed out from adding songs to the queue");
+            return true;
+        }
+
+        string broadcasterId = CPH.TwitchGetBroadcaster().UserId;
+        string userId = args["userId"].ToString();
+
         TwitchUserInfoEx userInfo = CPH.TwitchGetExtendedUserInfoByLogin(user);
         bool follower = userInfo.IsFollowing;
         bool subscriber = userInfo.IsSubscribed;
@@ -63,19 +73,32 @@ public class CPHInline
         bool restriction_vip = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_restriction_vip", false);
 
         // If user doesn't match a restriction, abort
-        if (restriction && ((restriction_follower && !follower) || (restriction_subscriber && !subscriber) || (restriction_vip && !vip)))
+        if ((userId != broadcasterId) && restriction && ((restriction_follower && !follower) || (restriction_subscriber && !subscriber) || (restriction_vip && !vip)))
         {
-            CPH.SendMessage("User doesn't have permission to request songs");
+            string role;
+            if (restriction_follower && !follower)
+            {
+                role = "follower";
+            }
+            else if (restriction_subscriber && !subscriber)
+            {
+                role = "subscriber";
+            }
+            else
+            {
+                role = "VIP";
+            }
+            CPH.SendMessage($"You need to be a {role} to request songs.");
             return true;
         }
 
+        // Check if user already requests too much songs in queue
         bool maxRequests = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_maxuser", false);
         int max = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_maxuser_number", false);
-
         bool checkQueue = CanUserAddTrackInQueue(maxRequests, max, user);
         if (!checkQueue)
         {
-            CPH.SendMessage($"User already added {max} songs to the queue");
+            CPH.SendMessage($"You already added {max} songs to the queue ! Please wait before requesting more songs");
             return true;
         }
 
@@ -95,9 +118,7 @@ public class CPHInline
         bool isYoutubeLink = false;
         bool spotifyLinksAllowed = false;
         bool youtubeLinksAllowed = false;
-
         bool songLength = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_length", false);
-        // Convert s to ms
         int songLengthNumber = CPH.GetGlobalVar<int>("SPOTIFYBOT_SR_length_number", false);
 
         Task.Run(async () =>
@@ -129,15 +150,14 @@ public class CPHInline
                         error = (int)TrackError.linksNotAllowed;
                         return;
                     }
-                    string songInfo = await FetchYoutubeLinkInfo(input);
-                    songInfo = SanitizeString(songInfo);
-                    CPH.SendMessage($"found {songInfo}");
-                    if (string.IsNullOrEmpty(songInfo))
+                    input = await FetchYoutubeLinkInfo(input);
+                    input = SanitizeString(input);
+                    if (string.IsNullOrEmpty(input))
                     {
                         error = (int)TrackError.notFound;
                         return;
                     }
-                    (track, songDuration) = await SearchTrack(accessToken, songInfo);
+                    (track, songDuration) = await SearchTrack(accessToken, input);
                 }
                 // If normal request, search for the track
                 else
@@ -176,31 +196,7 @@ public class CPHInline
         // Error handling
         if (error != 0)
         {
-            switch(error)
-            {
-                case (int)TrackError.notFound:
-                {
-                    CPH.SendMessage($"No song found for {input}");
-                    break;
-                }
-                case (int)TrackError.tooLong:
-                {
-                    CPH.SendMessage($"Song [{track.trackName} | {track.artistName}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
-                    break;
-                }
-                case (int)TrackError.linksNotAllowed:
-                {
-                    string msg = (isSpotifyLink) ? "Spotify" : "Youtube";
-                    CPH.SendMessage($"{msg} links are forbidden");
-                    break;
-                }
-                case (int)TrackError.addTrackError:
-                {
-                    CPH.SendMessage("There was an error trying to add song to queue");
-                    break;
-                }
-                default: break;
-            }
+            HandleError(error, input, track, songDuration, songLengthNumber, isSpotifyLink);
             return true;
         }
 
@@ -349,13 +345,20 @@ public class CPHInline
         {
             return string.Empty;
         }
-        CPH.SendMessage(videoDetails.ToString());
                 
         string title = videoDetails["title"]?.ToString();
         string author = videoDetails["author"]?.ToString();
-        //LogIt($"Extracted from ytInitialPlayerResponse => Title: {title}, Author: {author}");
 
-        return $"{title}";// {author}";
+        // Erase everything concerning feats in title
+        string marker = "ft";
+        string marker2 = "feat";
+        int index = title.IndexOf(marker);
+        int index2 = title.IndexOf(marker2);
+
+        int min = Math.Min((index > 0) ? index : int.MaxValue, (index2 > 0) ? index2 : int.MaxValue);
+        title = (min != int.MaxValue) ? title.Substring(0, min) : title;
+
+        return $"{title} {author}";
     }
 
 
@@ -377,7 +380,9 @@ public class CPHInline
 
         return GetTrackInfo(root);
     }
-    
+    #endregion
+
+    #region addsong
     // Add a selected track to the queue
     private async Task<int> AddTrackToQueue(string accessToken, string trackURI)
     {
@@ -460,8 +465,9 @@ public class CPHInline
 
         // Init variables
         int bestScore = 0;
+        int bestBloat = 0;
         JToken bestTrack = null;
-        List<string> queryWords = new List<string>(query.ToLower().Split(' '));
+        List<string> queryWords = query.ToLower().Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).ToList();
 
         // Loop through tracks and compute their score
         foreach(JToken item in tracks)
@@ -472,17 +478,27 @@ public class CPHInline
             string artists = GetArtists(item);
 
             // If query word is in artist / song name, increase score
+            // Else, add 1 to bloat score
             foreach (string word in queryWords)
             {
+                if(string.IsNullOrWhiteSpace(word))
+                {
+                    continue;
+                }
                 if (nameLower.Contains(word) || artists.Contains(word))
                 {
                     currentScore++;
                 }
             }
-            if (currentScore > bestScore)
+            string concat = $"{nameLower} {artists}";
+            int wordCount = concat.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries).Length;
+            int currentBloatScore = wordCount - currentScore;
+
+            if (currentScore > bestScore || (currentScore == bestScore && currentBloatScore < bestBloat))
             {
                 bestScore = currentScore;
                 bestTrack = item;
+                bestBloat = currentBloatScore;
             }
         }
 
@@ -508,7 +524,7 @@ public class CPHInline
                 continue;
             }
             string currentArtistLower = currentArtist.ToLower();
-            artistsString = string.IsNullOrEmpty(artistsString) ? currentArtist : $"{artistsString} {currentArtistLower}";
+            artistsString = string.IsNullOrEmpty(artistsString) ? currentArtistLower : $"{artistsString} {currentArtistLower}";
         }
         return artistsString;
     }
@@ -542,6 +558,36 @@ public class CPHInline
         string res = Regex.Replace(input, @"\([^)]*\)", "");
         res = Regex.Replace(res, @"\[[^\]]*\]", "");
         return res;
+    }
+
+    // Send error msg to represent error encountered
+    private void HandleError(int error, string input, QueueItem track, int songDuration, int songLengthNumber, bool isSpotifyLink)
+    {
+        switch(error)
+        {
+            case (int)TrackError.notFound:
+            {
+                CPH.SendMessage($"No song found for {input}");
+                break;
+            }
+            case (int)TrackError.tooLong:
+            {
+                CPH.SendMessage($"Song [{track.trackName} | {track.artistName}] ({songDuration}s) is longer than maximum allowed ({songLengthNumber}s)");
+                break;
+            }
+            case (int)TrackError.linksNotAllowed:
+            {
+                string msg = (isSpotifyLink) ? "Spotify" : "Youtube";
+                CPH.SendMessage($"{msg} links are forbidden");
+                break;
+            }
+            case (int)TrackError.addTrackError:
+            {
+                CPH.SendMessage("There was an error trying to add song to queue");
+                break;
+            }
+            default: break;
+        }
     }
     #endregion
 }
