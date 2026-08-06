@@ -63,11 +63,24 @@ public class CPHInline
             return false;
         }
 
+        // Load current queue before skipping
+        string queueJSON = CPH.GetGlobalVar<string>("SPOTIFYBOT_queue", false);
+        List<QueueItem> queue = string.IsNullOrEmpty(queueJSON) ? new() : JsonConvert.DeserializeObject<List<QueueItem>>(queueJSON);
+
         Task.Run(async () =>
         {
             try
             {
                 int status = await SkipTrack(accessToken);
+                if (status == 200)
+                {
+                    // If skipped, add a strike to user
+                    bool isTOEnabled = CPH.GetGlobalVar<bool>("SPOTIFYBOT_SR_timeout", false);
+                    if (isTOEnabled)
+                    {
+                        addStrike(queue);
+                    }
+                }
                 // TODO : do smth with status
             }
             catch (Exception ex)
@@ -177,7 +190,24 @@ public class CPHInline
         string URI = $"https://api.spotify.com/v1/me/player/next/";
         var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Post);
         return status;
-    } 
+    }
+
+    // Add strike to user who requested skipped song
+    private void addStrike(List<QueueItem> queue)
+    {
+        if (queue == null || queue.Count == 0)
+        {
+            return;
+        }
+        QueueItem currentSong = queue[0];
+        string username = currentSong.username;
+        if (string.IsNullOrEmpty(username))
+        {
+            return;
+        }
+        CPH.SetArgument("user", username);
+		CPH.RunAction("SPOTIFYBOT - Timeout add strike", false);
+    }
     #endregion
 
     #region command
