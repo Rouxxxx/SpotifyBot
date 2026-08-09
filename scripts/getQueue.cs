@@ -66,15 +66,31 @@ public class CPHInline
     // Builds message containing queue info
     public string BuildQueueMessage(List<QueueItem> queue)
     {
+        int queueLength = queue.Count;
         string message = string.Empty;
         // Skip first element (current song)
         for (int id = 1; id < queue.Count; id++) 
         {
+            int msgLength = message.Length;
+            string endQueueMsg = $"and {queueLength - id} other";
+            endQueueMsg = (queueLength - id > 1) ? $"{endQueueMsg}s" : endQueueMsg;
+
+            int endQueueMsgLength = endQueueMsg.Length;
+
             QueueItem item = queue[id];
             // Skip elements addded manually
             if (item.username == defaultSongUser)
             {
                 continue;
+            }
+            string currentSong = $"[{item.trackName} | {item.artistName}]";
+            int currentSongLength = currentSong.Length;
+
+            // Twitch messages cannot be longer than 500 characters
+            if (msgLength + currentSongLength + endQueueMsgLength + 1 >= 50)
+            {
+                message += $" {endQueueMsg}";
+                break;
             }
 
             // Add current song to the list
