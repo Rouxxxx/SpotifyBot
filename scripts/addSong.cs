@@ -277,15 +277,11 @@ public class CPHInline
 
         var response = await _http.SendAsync(request);
         int statusCode = (int)response.StatusCode;
-
         CPH.LogDebug($"HTTP Request: [{URI}] Reponse code: {statusCode}");
 
         // If error, retries up to 5 times
         if (!response.IsSuccessStatusCode) {
-            if (retries < 2) {
-                return await ProcessAPIRequest(accessToken, URI, method, retries + 1);
-            }
-            return (statusCode, string.Empty);
+            return (retries >= 5) ? (statusCode, string.Empty) : await ProcessAPIRequest(accessToken, URI, method, retries + 1);
         }
 
         string json = await response.Content.ReadAsStringAsync();
@@ -436,9 +432,9 @@ public class CPHInline
 
     #region searchSong
     // Search a track and return its uri
-    private async Task<(QueueItem track, int songDuration)> SearchTrack(string accessToken, string query)
+    private async Task<(QueueItem track, int songDuration)> SearchTrack(string accessToken, string query, int retries = 0)
     {
-        string URI = $"https://api.spotify.com/v1/search?limit=10&market=US&type=track&q=track:{query}";
+        string URI = $"https://api.spotify.com/v1/search?limit=10&type=track&q=track:{query}";
         var (status, json) = await ProcessAPIRequest(accessToken, URI, HttpMethod.Get);
 
         // Error handling
@@ -450,6 +446,12 @@ public class CPHInline
         // Parse the JSON response
         JObject root = JObject.Parse(json);
         JArray tracks = (JArray)root["tracks"]?["items"];
+
+        // Retries search up to 2 times if empty
+        if (tracks == null || tracks.Count == 0)
+        {
+            return (retries == 2) ? (null, 0) : await SearchTrack(accessToken, query, retries + 1);
+        }
         JToken item = FindBestMatch(tracks, query);
 
         return GetTrackInfo(item);
